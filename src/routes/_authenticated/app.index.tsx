@@ -225,7 +225,7 @@ function HomePage() {
         </Link>
       </section>
 
-      {/* HERO SUMMARY CARD - [BOOKING-PUSH:UI:01] */}
+      {/* HERO SUMMARY CARD */}
       <section>
         <Card className="overflow-hidden border-0 bg-[#1A1A1A] text-white shadow-2xl rounded-3xl relative">
           <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/20 rounded-full blur-3xl -mr-16 -mt-16" />
