@@ -412,43 +412,28 @@ export async function dispatchCustomerNotifications(): Promise<number> {
 
 /** Dispatch unpushed partner notifications (excluding Daily Shine offers). */
 export async function dispatchPartnerNotifications(): Promise<number> {
-  const ts_event = Date.now();
-  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event} type=partner_notification`);
   const sb = await admin();
-
   const sendOfferPush = await sender();
   const { data: rows } = await sb
     .from("partner_notifications")
     .select("id,partner_id,title,body,type,link,metadata")
     .is("pushed_at", null)
-    // Daily Shine offer pushes are owned exclusively by dispatchPendingOffers,
-    // keyed by offer_id and logged in offer_delivery_events.
     .neq("type", "daily_shine_offer")
     .gt("created_at", new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
     .limit(50);
 
   let sentCount = 0;
-  console.log(`[PUSH-DISPATCH:PARTNER] PROCESSING rows=${(rows ?? []).length}`);
   for (const r of rows ?? []) {
-    console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
     const type = String(r.type ?? "");
-
-    // Canonical mapping for P0-B Reliability
     const canonicalTypeMap: Record<string, string> = {
       "new_assignments": "new_booking",
       "assignment_created": "new_booking",
       "partner_assigned": "new_booking",
     };
     const mappedType = canonicalTypeMap[type] || type;
-    
     const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(mappedType);
     
     try {
-      const ts_dispatch = Date.now();
-      console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
-      console.log(`[PARTNER-BOOKING-E2E:07] FCM_BATCH_DISPATCH_STARTED id=${r.id} type=${mappedType}`);
-      console.log(`[PUSH-LATENCY:04] TOKEN_RESOLVED ts=${Date.now()}`);
-
       const result = await sendOfferPush({
         userId: r.partner_id,
         title: r.title,
