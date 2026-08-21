@@ -355,15 +355,6 @@ export async function dispatchCustomerNotifications(): Promise<number> {
     
     const headsUp = CUSTOMER_HEADSUP_TYPES.has(mappedType);
     try {
-      const ts_dispatch = Date.now();
-      if (isUnavailable) {
-        console.log(`[UNAVAILABLE-PUSH:05] IMMEDIATE_DISPATCH_STARTED id=${r.id} user_id=${r.user_id}`);
-        console.log(`[UNAVAILABLE-E2E:05] IMMEDIATE_DISPATCH_TRIGGERED`);
-        console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
-      } else {
-        console.log(`[CUSTOMER-PROD-E2E:03-DETAIL] NOTIFICATION_ROW_FOUND id=${r.id} user_id=${r.user_id} type=${mappedType}`);
-        console.log(`[PUSH-LATENCY:03] DISPATCH_TRIGGERED ts=${ts_dispatch}`);
-      }
 
 
       // Checkpointed Payload (Checkpoint 9)
