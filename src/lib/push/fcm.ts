@@ -141,7 +141,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   }
   
   if (!perm || perm.receive !== "granted") {
-    console.log(`[PARTNER-FCM] requesting notification permissions...`);
+    // Request permissions from user
     try {
       perm = await FirebaseMessaging.requestPermissions();
       console.log(`[PARTNER-FCM] requestPermissions result: ${perm.receive}`);
