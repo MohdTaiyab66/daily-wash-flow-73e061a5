@@ -179,7 +179,7 @@ function AuthPage() {
       } else {
         await ensureStaffRole("admin");
       }
-      console.log("[PARTNER-AUTH:09] PARTNER_HOME_OPENED");
+      // Login complete, navigating to app
       navigate({ to: nextRoute as any });
     } catch (e: any) {
       haptic([40, 40, 40]);
