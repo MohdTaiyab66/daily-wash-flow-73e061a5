@@ -43,6 +43,11 @@ function PartnerRuntime() {
       console.log("[PARTNER-NAV] Back navigation hit public root. Redirecting to Partner Home...");
       navigate({ to: "/app", replace: true });
     }
+    // Also block access to customer routes for logged in partners
+    if (location.pathname.startsWith("/c/")) {
+      console.log("[PARTNER-NAV] Partner attempted to access customer route. Redirecting to Partner Home...");
+      navigate({ to: "/app", replace: true });
+    }
   }, [location.pathname, navigate]);
 
   usePartnerHeartbeat(partner?.id);
