@@ -146,7 +146,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
       perm = await FirebaseMessaging.requestPermissions();
       // Permission request completed
     } catch (e: any) {
-      console.error(`[PARTNER-FCM] requestPermissions failed: ${e?.message ?? String(e)}`);
+      // Permission request failed
     }
   }
   
