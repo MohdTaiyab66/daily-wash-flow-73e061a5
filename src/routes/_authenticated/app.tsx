@@ -32,6 +32,8 @@ function AppLayout() {
 function PartnerRuntime() {
   const { data: partner } = usePartner();
   const navigate = useNavigate();
+  const qc = useQueryClient();
+
   usePartnerHeartbeat(partner?.id);
   useFcmRegistration(partner?.id ?? null, "partner");
   usePartnerRouteSync(partner?.id ?? null);
