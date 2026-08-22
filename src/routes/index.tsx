@@ -111,67 +111,67 @@ function LandingPage() {
             <div className="bg-black/40 p-2 mt-2 border border-slate-800 rounded whitespace-pre-wrap">
               P0 — SINGLE ANDROID DEVICE MULTI-PARTNER TESTING
 
-              IMPORTANT TESTING CONTEXT:
-              I currently have ONLY ONE Android phone.
-              I am testing multiple Partner accounts on the same physical device by:
-              Login Partner A -> logout -> login Partner B -> logout -> login Partner C etc.
-              This MUST NOT create backend/account contamination.
-              The application must correctly isolate each partner account even when the same physical Android device is reused.
+              {"\n"}IMPORTANT TESTING CONTEXT:
+              {"\n"}I currently have ONLY ONE Android phone.
+              {"\n"}I am testing multiple Partner accounts on the same physical device by:
+              {"\n"}Login Partner A -{">"} logout -{">"} login Partner B -{">"} logout -{">"} login Partner C etc.
+              {"\n"}This MUST NOT create backend/account contamination.
+              {"\n"}The application must correctly isolate each partner account even when the same physical Android device is reused.
 
-              ==================================================
-              1. ACCOUNT SWITCH CLEANUP
-              ==================================================
-              Every logout/login transition must correctly handle:
-              Supabase auth session, current partner identity, TanStack Query cache, Partner realtime subscriptions, FCM token/account association, local notification state, assignment state.
-              When Partner A logs out: clear Partner A-specific cached data.
-              When Partner B logs in: Partner B must start with Partner B's own authoritative state.
+              {"\n"}==================================================
+              {"\n"}1. ACCOUNT SWITCH CLEANUP
+              {"\n"}==================================================
+              {"\n"}Every logout/login transition must correctly handle:
+              {"\n"}Supabase auth session, current partner identity, TanStack Query cache, Partner realtime subscriptions, FCM token/account association, local notification state, assignment state.
+              {"\n"}When Partner A logs out: clear Partner A-specific cached data.
+              {"\n"}When Partner B logs in: Partner B must start with Partner B's own authoritative state.
 
-              ==================================================
-              2. FCM TOKEN HANDLING
-              ==================================================
-              The same physical device may have one FCM token at a time.
-              DO NOT assume: one device = one permanent partner.
-              When switching accounts: verify how the current FCM token is associated with the logged-in partner.
-              The backend must NOT send a notification to the wrong partner because the device token was previously associated with another account.
-              Use the canonical partner/account identity.
+              {"\n"}==================================================
+              {"\n"}2. FCM TOKEN HANDLING
+              {"\n"}==================================================
+              {"\n"}The same physical device may have one FCM token at a time.
+              {"\n"}DO NOT assume: one device = one permanent partner.
+              {"\n"}When switching accounts: verify how the current FCM token is associated with the logged-in partner.
+              {"\n"}The backend must NOT send a notification to the wrong partner because the device token was previously associated with another account.
+              {"\n"}Use the canonical partner/account identity.
 
-              ==================================================
-              3. REALTIME SESSION CLEANUP
-              ==================================================
-              When Partner A logs out: unsubscribe Partner A's realtime channels.
-              When Partner B logs in: create Partner B's realtime subscriptions.
-              There must never be a situation where Partner A realtime listener + Partner B realtime listener are both active on the same logged-in app session.
+              {"\n"}==================================================
+              {"\n"}3. REALTIME SESSION CLEANUP
+              {"\n"}==================================================
+              {"\n"}When Partner A logs out: unsubscribe Partner A's realtime channels.
+              {"\n"}When Partner B logs in: create Partner B's realtime subscriptions.
+              {"\n"}There must never be a situation where Partner A realtime listener + Partner B realtime listener are both active on the same logged-in app session.
 
-              ==================================================
-              4. QUERY CACHE ISOLATION
-              ==================================================
-              After logout: clear Partner A assignment/route/notification/earnings cache.
-              After Partner B login: fetch Partner B's authoritative state from the database.
+              {"\n"}==================================================
+              {"\n"}4. QUERY CACHE ISOLATION
+              {"\n"}==================================================
+              {"\n"}After logout: clear Partner A assignment/route/notification/earnings cache.
+              {"\n"}After Partner B login: fetch Partner B's authoritative state from the database.
 
-              ==================================================
-              5. SINGLE-DEVICE E2E TEST
-              ==================================================
-              Use ONE phone.
-              TEST A: Login Deepak -> verify identity -> verify assignment -> Admin assigns booking -> verify Deepak state. Logout completely.
-              TEST B: Login Vikram -> verify identity -> verify no Deepak state remains -> Admin assigns NEW booking to Vikram -> verify Vikram state. Logout completely.
+              {"\n"}==================================================
+              {"\n"}5. SINGLE-DEVICE E2E TEST
+              {"\n"}==================================================
+              {"\n"}Use ONE phone.
+              {"\n"}TEST A: Login Deepak -{">"} verify identity -{">"} verify assignment -{">"} Admin assigns booking -{">"} verify Deepak state. Logout completely.
+              {"\n"}TEST B: Login Vikram -{">"} verify identity -{">"} verify no Deepak state remains -{">"} Admin assigns NEW booking to Vikram -{">"} verify Vikram state. Logout completely.
 
-              ==================================================
-              6. PUSH TEST INTERPRETATION
-              ==================================================
-              Do NOT treat "push did not appear" as definitive proof of backend broadcast failure unless the current account's FCM token and Firebase response are verified.
+              {"\n"}==================================================
+              {"\n"}6. PUSH TEST INTERPRETATION
+              {"\n"}==================================================
+              {"\n"}Do NOT treat "push did not appear" as definitive proof of backend broadcast failure unless the current account's FCM token and Firebase response are verified.
 
-              ==================================================
-              7. DATABASE ASSIGNMENT TEST
-              ==================================================
-              Admin assigns: Deepak, Vikram, Imran, Aarav. Each must create correct assignment/notification. No account should affect another.
+              {"\n"}==================================================
+              {"\n"}7. DATABASE ASSIGNMENT TEST
+              {"\n"}==================================================
+              {"\n"}Admin assigns: Deepak, Vikram, Imran, Aarav. Each must create correct assignment/notification. No account should affect another.
 
-              ==================================================
-              8. FUTURE PARTNERS
-              ==================================================
-              The same account-isolation behavior must work for every future Partner account using the same device or another device.
+              {"\n"}==================================================
+              {"\n"}8. FUTURE PARTNERS
+              {"\n"}==================================================
+              {"\n"}The same account-isolation behavior must work for every future Partner account using the same device or another device.
 
-              FINAL ACCEPTANCE:
-              Logging in as one partner must NEVER cause another partner's assignment, notifications, route, earnings or realtime state to appear.
+              {"\n"}FINAL ACCEPTANCE:
+              {"\n"}Logging in as one partner must NEVER cause another partner's assignment, notifications, route, earnings or realtime state to appear.
             </div>
           </div>
         </div>
