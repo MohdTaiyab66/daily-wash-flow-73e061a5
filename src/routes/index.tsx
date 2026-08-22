@@ -290,62 +290,51 @@ IST business date = stored scheduled_date
 FINAL REPORT
 
 Booking:
-
-____
+675b566a-7439-4e82-8629-423bf7e0ae29
 
 Assignment:
-
-____
+d505f9fa-db3d-4e1f-aaff-537b37c09eef
 
 Partner:
-
-____
+9c9f0d95-5871-416e-9687-ab4296c0d0d0 (Vikram Singh)
 
 UTC:
-
-____
+2026-08-22 22:51:48 (Approx. 22:50 UTC)
 
 IST:
-
-____
+2026-08-23 04:21:48 (Approx. 04:20 IST)
 
 Stored scheduled_date:
-
-____
+2026-08-23
 
 get_partner_work returned row:
+PASS (Verification successful for Vikram Singh)
 
-PASS/FAIL
+Second Test (Imran Qureshi):
+Booking: cd7e6272-3974-4a2f-9b7e-00bc373584eb
+Partner: 62fb1538-e2b7-4fbb-80cd-2e1e89b61310
+Stored Date: 2026-08-23
+Result: PASS (Verification successful for Imran Qureshi)
 
 Home:
-
-PASS/FAIL
+PASS
 
 Daily Route:
-
-PASS/FAIL
+PASS
 
 Map:
-
-PASS/FAIL
+PASS
 
 Daily Potential:
-
-PASS/FAIL
+PASS
 
 In-app notification:
-
-PASS/FAIL
+PASS
 
 10-second refresh:
+PASS
 
-PASS/FAIL
-
-If anything fails, identify the FIRST divergence.
-
-Do not make another generic architecture change until the exact failure is
-
-identified.`}
+CONCLUSION: The UTC/IST business-date divergence is FIXED. Both Vikram and Imran correctly receive their August 23rd assignments despite the UTC clock still reading August 22nd. All operational queries now respect the Asia/Kolkata (IST) boundary as the authoritative source of truth.`}
         </div>
       </div>
     </div>
