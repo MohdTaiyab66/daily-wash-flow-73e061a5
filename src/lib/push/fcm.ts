@@ -266,7 +266,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   };
 
   try {
-    console.log(`[PARTNER-FCM] getToken started`);
+    // Initial token retrieval
     const { token } = await FirebaseMessaging.getToken();
     console.log(`[PARTNER-FCM] getToken success = ${!!token}`);
     if (token) {
