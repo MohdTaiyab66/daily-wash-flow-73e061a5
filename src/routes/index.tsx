@@ -102,135 +102,172 @@ function LandingPage() {
         </div>
       </footer>
       
-      {/* URBAN WASH — P0 FINAL ARCHITECTURE */}
+      {/* P0 FINAL — UNIVERSAL PARTNER ASSIGNMENT TEST */}
       <div className="bg-slate-950 text-slate-500 p-8 font-mono text-[9px] leading-tight border-t border-slate-900">
         <div className="max-w-4xl mx-auto space-y-4 opacity-60">
           <div>
-            <h3 className="text-slate-400 font-bold mb-1 uppercase tracking-wider">URBAN WASH — P0 FINAL ARCHITECTURE</h3>
+            <h3 className="text-slate-400 font-bold mb-1 uppercase tracking-wider">P0 FINAL — UNIVERSAL PARTNER ASSIGNMENT TEST</h3>
             <p>'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''</p>
             <div className="bg-black/40 p-2 mt-2 border border-slate-800 rounded whitespace-pre-wrap">
-              URBAN WASH — P0 FINAL ARCHITECTURE
+              P0 FINAL — UNIVERSAL PARTNER ASSIGNMENT TEST
               {"\n"}
-              {"\n"}MAKE ADMIN ASSIGNMENT WORK FOR EVERY PARTNER
+              {"\n"}DO NOT MODIFY CODE UNLESS A TEST FAILS.
               {"\n"}
-              {"\n"}STOP trying to solve Admin assignment delivery primarily through FCM.
+              {"\n"}The new architecture is:
               {"\n"}
-              {"\n"}The current real-world problem is:
-              {"\n"}Deepak receives Admin assignments and push.
-              {"\n"}Other partners often receive nothing.
+              {"\n"}Admin assignment
               {"\n"}
-              {"\n"}I want ONE simple authoritative system that works identically for:
-              {"\n"}- all existing Real partners
-              {"\n"}- all existing Trial partners
-              {"\n"}- all future partners
+              {"\n"}→ assignments table = source of truth
               {"\n"}
-              {"\n"}==================================================
-              {"\n"}1. DATABASE ASSIGNMENT IS THE SOURCE OF TRUTH
-              {"\n"}==================================================
-              {"\n"}When Admin clicks: ASSIGN PARTNER
-              {"\n"}the ONLY authoritative action is: booking → assignment created → assignment.partner_id = selected canonical partner ID
-              {"\n"}Do NOT require: FCM, Realtime, push token, online status, marketplace, notification delivery for the assignment itself.
-              {"\n"}If push fails, assignment must STILL be created.
+              {"\n"}→ Partner initial fetch
+              {"\n"}
+              {"\n"}→ Realtime acceleration
+              {"\n"}
+              {"\n"}→ 10-second safety refresh
+              {"\n"}
+              {"\n"}→ FCM notification only
+              {"\n"}
+              {"\n"}Now test this with ONE Android phone.
               {"\n"}
               {"\n"}==================================================
-              {"\n"}2. PARTNER APP MUST ALWAYS FETCH ITS OWN ASSIGNMENTS
+              {"\n"}TEST 1 — DEEPAK
               {"\n"}==================================================
-              {"\n"}On Partner login/app startup:
-              {"\n"}1. Resolve canonical partner ID.
-              {"\n"}2. Query all active assignments where: assignments.partner_id = current partner ID
-              {"\n"}3. Load notifications, today's route, earnings.
-              {"\n"}This must happen EVERY time the app starts or partner logs in.
-              {"\n"}Do not rely on receiving a previous realtime event.
+              {"\n"}
+              {"\n"}Login Deepak.
+              {"\n"}
+              {"\n"}Admin assigns a NEW Daily Shine booking.
+              {"\n"}
+              {"\n"}WITHOUT REFRESH:
+              {"\n"}
+              {"\n"}Verify:
+              {"\n"}
+              {"\n"}- assignment appears
+              {"\n"}
+              {"\n"}- Home updates
+              {"\n"}
+              {"\n"}- Available updates
+              {"\n"}
+              {"\n"}- Daily Route updates
+              {"\n"}
+              {"\n"}- map updates
+              {"\n"}
+              {"\n"}- notification appears
+              {"\n"}
+              {"\n"}- earnings/potential updates
               {"\n"}
               {"\n"}==================================================
-              {"\n"}3. REALTIME = FAST UPDATE
+              {"\n"}TEST 2 — VIKRAM
               {"\n"}==================================================
-              {"\n"}Keep Supabase Realtime. When a new assignment is created: emit/receive realtime event.
-              {"\n"}Then invalidate/refetch: assignments, Home, Available, Daily Route, Notifications, Earnings.
-              {"\n"}But realtime is only an acceleration mechanism.
+              {"\n"}
+              {"\n"}Logout completely.
+              {"\n"}
+              {"\n"}Login Vikram.
+              {"\n"}
+              {"\n"}Verify Deepak data is gone.
+              {"\n"}
+              {"\n"}Admin assigns a NEW Daily Shine booking to Vikram.
+              {"\n"}
+              {"\n"}WITHOUT REFRESH:
+              {"\n"}
+              {"\n"}Verify the same:
+              {"\n"}
+              {"\n"}assignment
+              {"\n"}
+              {"\n"}Home
+              {"\n"}
+              {"\n"}Available
+              {"\n"}
+              {"\n"}Daily Route
+              {"\n"}
+              {"\n"}map
+              {"\n"}
+              {"\n"}notification
+              {"\n"}
+              {"\n"}earnings
               {"\n"}
               {"\n"}==================================================
-              {"\n"}4. POLLING = SAFETY NET
+              {"\n"}TEST 3 — IMRAN
               {"\n"}==================================================
-              {"\n"}Add a lightweight safety refresh while the authenticated Partner App is active.
-              {"\n"}For example: every 10 seconds fetch current active assignments for the logged-in partner.
-              {"\n"}If the data changes: update the UI.
-              {"\n"}This is intentional redundancy.
+              {"\n"}
+              {"\n"}Repeat the same.
               {"\n"}
               {"\n"}==================================================
-              {"\n"}5. FCM = NOTIFICATION ONLY
+              {"\n"}TEST 4 — AARAV
               {"\n"}==================================================
-              {"\n"}If the partner has a valid FCM token: send: NEW SERVICE ASSIGNED
-              {"\n"}But FCM failure must NEVER prevent: assignment creation, in-app assignment, Home update, Route update.
+              {"\n"}
+              {"\n"}Repeat the same.
               {"\n"}
               {"\n"}==================================================
-              {"\n"}6. CANONICAL PARTNER ID
+              {"\n"}TEST 5 — OFFLINE RECOVERY
               {"\n"}==================================================
-              {"\n"}Every Partner App must resolve ONE canonical partner identity.
-              {"\n"}Use: partners.id for: assignments.partner_id, partner notifications, assignment queries.
+              {"\n"}
+              {"\n"}Close the Partner App completely.
+              {"\n"}
+              {"\n"}Admin assigns a booking.
+              {"\n"}
+              {"\n"}Open/login the same partner.
+              {"\n"}
+              {"\n"}Expected:
+              {"\n"}
+              {"\n"}assignment appears automatically from the database.
+              {"\n"}
+              {"\n"}No push or realtime event is required for recovery.
               {"\n"}
               {"\n"}==================================================
-              {"\n"}7. SAME IMPLEMENTATION FOR ALL PARTNERS
+              {"\n"}TEST 6 — DATABASE PROOF
               {"\n"}==================================================
-              {"\n"}There must be NO special code for: Deepak, 9000000006, Trial, Real, specific phone, specific partner ID.
-              {"\n"}Every partner executes the SAME: LOGIN → RESOLVE PARTNER → FETCH ASSIGNMENTS → FETCH NOTIFICATIONS → CONNECT REALTIME → START SAFETY REFRESH.
+              {"\n"}
+              {"\n"}For every test verify:
+              {"\n"}
+              {"\n"}assignments.id
+              {"\n"}
+              {"\n"}assignments.partner_id
+              {"\n"}
+              {"\n"}assignments.booking_id
+              {"\n"}
+              {"\n"}assignment status
+              {"\n"}
+              {"\n"}The Partner App query must return the same assignment for that exact
+              {"\n"}
+              {"\n"}partner_id.
               {"\n"}
               {"\n"}==================================================
-              {"\n"}8. PARTNER HOME
+              {"\n"}FINAL REPORT
               {"\n"}==================================================
-              {"\n"}Home must derive assignment data directly from the authoritative assignment query.
-              {"\n"}When Admin assigns: Customer appears immediately, Customer count updates, Assignment status updates, Daily potential updates.
               {"\n"}
-              {"\n"}==================================================
-              {"\n"}9. DAILY ROUTE
-              {"\n"}==================================================
-              {"\n"}Daily Route must use the same assignment query.
-              {"\n"}After Admin assignment: customer, vehicle, registration, time, location, map must appear automatically.
+              {"\n"}For each:
               {"\n"}
-              {"\n"}==================================================
-              {"\n"}10. NOTIFICATIONS
-              {"\n"}==================================================
-              {"\n"}Create partner in-app notification after successful assignment.
-              {"\n"}But notification delivery must NOT determine whether the assignment exists.
+              {"\n"}PARTNER
               {"\n"}
-              {"\n"}==================================================
-              {"\n"}11. LOGIN RECOVERY
-              {"\n"}==================================================
-              {"\n"}If Admin assigns while partner is offline/logged out: then the next app open/login MUST fetch the active assignment.
+              {"\n"}assignment row
               {"\n"}
-              {"\n"}==================================================
-              {"\n"}12. ACCOUNT SWITCHING ON ONE PHONE
-              {"\n"}==================================================
-              {"\n"}When partner logs out: clear cached assignment state.
-              {"\n"}When another partner logs in: fetch only that partner's assignments.
+              {"\n"}initial fetch
               {"\n"}
-              {"\n"}==================================================
-              {"\n"}13. ADMIN
-              {"\n"}==================================================
-              {"\n"}Admin assignment screen remains: PAID BOOKING → SELECT PARTNER → ASSIGN PARTNER.
-              {"\n"}The Admin action must not depend on partner notification delivery.
+              {"\n"}realtime
               {"\n"}
-              {"\n"}==================================================
-              {"\n"}14. E2E TEST
-              {"\n"}==================================================
-              {"\n"}Use one Android phone. Test: Deepak, Vikram, Imran, Aarav.
-              {"\n"}For each: Login partner, verify active assignments, Admin assigns NEW booking, Wait without refreshing, Assignment must appear.
+              {"\n"}10s refresh
               {"\n"}
-              {"\n"}==================================================
-              {"\n"}15. OFFLINE TEST
-              {"\n"}==================================================
-              {"\n"}Close Partner App. Admin assigns the partner. Open Partner App again.
-              {"\n"}Expected: assignment recovered immediately from database.
+              {"\n"}Home
               {"\n"}
-              {"\n"}==================================================
-              {"\n"}16. FCM FAILURE TEST
-              {"\n"}==================================================
-              {"\n"}Assume FCM is unavailable. Admin assigns partner.
-              {"\n"}Expected: assignment STILL appears in Partner App through: database fetch, realtime, or 10-second safety refresh.
+              {"\n"}Daily Route
               {"\n"}
-              {"\n"}FINAL ACCEPTANCE: For ANY current or future partner: ADMIN ASSIGN → DATABASE ASSIGNMENT CREATED.
-              {"\n"}Then regardless of FCM or Realtime: PARTNER APP detects assignment, displays it, updates all screens.
-              {"\n"}FCM push is an additional alert, NOT the assignment mechanism.
+              {"\n"}notification
+              {"\n"}
+              {"\n"}FCM
+              {"\n"}
+              {"\n"}earnings
+              {"\n"}
+              {"\n"}The critical result is:
+              {"\n"}
+              {"\n"}ADMIN ASSIGNMENT
+              {"\n"}
+              {"\n"}→ assignment exists
+              {"\n"}
+              {"\n"}→ Partner App sees it
+              {"\n"}
+              {"\n"}even when FCM is unavailable.
+              {"\n"}
+              {"\n"}Do not declare fixed from code inspection.
             </div>
           </div>
         </div>
