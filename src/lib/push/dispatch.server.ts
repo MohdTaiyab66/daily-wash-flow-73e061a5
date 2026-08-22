@@ -410,28 +410,58 @@ export async function dispatchPartnerNotifications(): Promise<number> {
   for (const r of rows ?? []) {
     const type = String(r.type ?? "");
     const canonicalTypeMap: Record<string, string> = {
-      "new_assignments": "new_booking",
-      "assignment_created": "new_booking",
-      "partner_assigned": "new_booking",
+      "new_assignments": "new_assignment",
+      "assignment_created": "new_assignment",
+      "partner_assigned": "new_assignment",
     };
     const mappedType = canonicalTypeMap[type] || type;
     const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(mappedType);
     
     try {
+      // UNIVERSAL P0 FIX: Search for ANY valid token linked to this phone number
+      // if no tokens are found for the specific partner_id.
+      // This solves identity fragmentation where tokens are trapped on duplicate customer accounts.
+      let targetUserId = r.partner_id;
+      
+      const { data: partner } = await sb.from("partners").select("phone").eq("id", r.partner_id).maybeSingle();
+      if (partner?.phone) {
+        const { data: tokens } = await sb.from("push_tokens").select("user_id").eq("user_id", r.partner_id).is("invalid_at", null).limit(1);
+        
+        if (!tokens || tokens.length === 0) {
+          // No tokens on partner ID. Look for tokens on other identities with same phone.
+          const { data: others } = await sb.from("partners").select("id").eq("phone", partner.phone).neq("id", r.partner_id);
+          const otherPartnerIds = (others || []).map((p: any) => p.id);
+          
+          const { data: customers } = await sb.from("customer_profiles").select("id").eq("phone", partner.phone);
+          const customerIds = (customers || []).map((c: any) => c.id);
+          
+          const allIdentityIds = [...new Set([...otherPartnerIds, ...customerIds])];
+          
+          if (allIdentityIds.length > 0) {
+            const { data: altTokens } = await sb
+              .from("push_tokens")
+              .select("user_id")
+              .in("user_id", allIdentityIds)
+              .is("invalid_at", null)
+              .limit(1);
+            
+            if (altTokens && altTokens.length > 0) {
+              targetUserId = altTokens[0].user_id;
+            }
+          }
+        }
+      }
+
       const result = await sendOfferPush({
-        userId: r.partner_id,
+        userId: targetUserId, // Use resolved identity
         title: r.title,
         body: r.body ?? "",
         data: {
           type: mappedType,
           link: r.link ?? (isAssignment ? "/app/assignments" : ""),
-          // REQUIRED CONTRACT — UrbanwashMessagingService.postAssignment()
-          // or postOffer() returns early unless broadcast_id and action_token
-          // are present.
           broadcast_id: String(r.id),
           action_token: String(r.id),
           offer_id: String(r.id),
-          // Kotlin uses these to key the notification and deep link.
           ...(r.metadata?.assignment_id ? { assignment_id: String(r.metadata.assignment_id) } : {}),
           ...(r.metadata?.service_id ? { service_id: String(r.metadata.service_id) } : {}),
         },
