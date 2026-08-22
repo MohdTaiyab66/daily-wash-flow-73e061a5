@@ -260,7 +260,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         await markErr(`${error.code ?? ""} ${error.message ?? ""}`.trim());
       }
     } catch (e: any) {
-      console.error(`[CUSTOMER-FCM-REGISTRATION] direct upsert catch: ${e?.message ?? String(e)}`);
+      // Fallback failed
       await markErr(String(e?.message ?? e ?? "unknown"));
     }
   };
