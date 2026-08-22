@@ -61,7 +61,7 @@ function PartnerRuntime() {
   useEffect(() => {
     const pending = consumePendingLink();
     if (pending) navigate({ to: pending as any });
-
+    const invalidateAll = () => {
       qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
       qc.invalidateQueries({ queryKey: ["partner-earnings"] });
       qc.invalidateQueries({ queryKey: ["partner-open-offers-home"] });
@@ -71,6 +71,7 @@ function PartnerRuntime() {
       // Authoritative today-assignment invalidate
       qc.invalidateQueries({ queryKey: ["today-assignment"] });
     };
+
 
     const onLink = (e: Event) => {
       const link = (e as CustomEvent).detail?.link;
