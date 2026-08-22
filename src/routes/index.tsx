@@ -121,49 +121,49 @@ function LandingPage() {
           {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            P0 — STOP GUESSING. FIND THE EXACT STATE PROPAGATION FAILURE.
+                                            P0 — STOP LANDING PAGE / STOP GENERIC FIXES
 
-The previous "universal service resolver" change did NOT fix the problem.
+PART 1 — TRACE THE ACTUAL PARTNER WORK DATA
 
-REAL RESULT:
+DO NOT modify src/routes/index.tsx.
 
-Admin assigns a partner.
+DO NOT write forensic instructions into any UI.
 
-Partner App receives:
+DO NOT modify FCM.
 
-"New Service Assigned"
+DO NOT add another merge/resolver workaround yet.
+
+REAL CURRENT RESULT:
+
+Admin assigns partner:
+
+✓ assignment is created
+
+✓ Partner App receives "New Service Assigned" in-app notification
 
 BUT:
 
-Home does NOT update
+✗ Home customer count does not update
 
-Customer count does NOT update
+✗ Daily Potential does not update
 
-Daily Potential does NOT update
+✗ Daily Route does not update
 
-Daily Route does NOT update
+✗ Map does not update
 
-Map does NOT update
+✗ Earnings/assigned work does not update
 
-Assignment/Available state does NOT update
+This proves notification delivery is NOT the problem.
 
-Earnings does NOT update
-
-Therefore the notification pipeline works, but the OPERATIONAL ASSIGNMENT
-
-STATE STILL DOES NOT PROPAGATE.
-
-Do NOT add another resolver/filter/merge based on assumptions.
-
-We need to trace ONE fresh assignment through the actual live system.
+Find exactly why the operational screens cannot see the newly assigned work.
 
 ==================================================
 
-1. CREATE ONE FRESH TEST ASSIGNMENT
+1. TAKE ONE FRESH TEST
 
 ==================================================
 
-Create a NEW paid Daily Shine booking.
+Create ONE new paid Daily Shine booking.
 
 Admin assigns it to a NON-DEEPAK partner.
 
@@ -175,203 +175,153 @@ assignment_id
 
 service_id
 
-subscription_id
+partner_id
 
 vehicle_id
 
 customer_id
 
+scheduled_date
+
+service_time
+
+booking_status
+
+assignment_status
+
+service_status
+
+==================================================
+
+2. INSPECT ACTUAL DATABASE ROWS
+
+==================================================
+
+Read the actual rows from:
+
+assignments
+
+services
+
+bookings
+
+subscriptions
+
+vehicles
+
+customers
+
+Use the REAL schema.
+
+Do not assume column names.
+
+Verify the new assignment has a complete relationship to:
+
+partner
+
+booking
+
+service
+
+vehicle
+
+customer
+
+scheduled date
+
+==================================================
+
+3. FIND THE ACTUAL DATA SOURCE OF EACH SCREEN
+
+==================================================
+
+Identify the exact function/query used by:
+
+HOME
+
+AVAILABLE
+
+DAILY ROUTE
+
+EARNINGS
+
+Do not assume they use useTodayAssignment.
+
+Give:
+
+Home source:
+
+____
+
+Available source:
+
+____
+
+Daily Route source:
+
+____
+
+Earnings source:
+
+____
+
+==================================================
+
+4. RUN THE SAME QUERY FOR THE CURRENT PARTNER
+
+==================================================
+
+Using the currently logged-in partner session:
+
+run each screen's REAL query against the fresh test assignment.
+
+Return:
+
+Home query returns assignment? YES/NO
+
+Available query returns assignment? YES/NO
+
+Route query returns assignment? YES/NO
+
+Earnings query sees assignment? YES/NO
+
+==================================================
+
+5. PRINT THE ACTUAL FILTERS
+
+==================================================
+
+For every failing query show the real filters:
+
 partner_id
 
-scheduled_date
+auth identity
+
+date
+
+status
 
 service status
 
 assignment status
 
-==================================================
+area/zone
 
-2. DATABASE PROOF
-
-==================================================
-
-Immediately after Admin clicks ASSIGN PARTNER, query the actual records.
-
-Confirm:
-
-assignments row exists
-
-service row exists
-
-correct partner_id
-
-correct scheduled_date
-
-correct vehicle_id
-
-correct customer_id
-
-correct service status
-
-correct assignment status
-
-Do NOT infer these values from notification metadata.
-
-SHOW THE ACTUAL ROWS.
-
-==================================================
-
-3. FIND THE EXACT QUERY USED BY HOME
-
-==================================================
-
-Do NOT modify useTodayAssignment yet.
-
-First identify the REAL query/function that currently supplies:
-
-TOTAL CUSTOMERS
-
-DAILY POTENTIAL
-
-DONE
-
-UNAVAILABLE
-
-NEED WASH
-
-REMAINING
-
-Then run that EXACT query using the CURRENT logged-in partner.
-
-We need to know:
-
-QUERY RETURNS NEW ASSIGNMENT = YES/NO
-
-If NO:
-
-show the exact filters that remove it:
-
-partner_id
-
-scheduled_date
-
-status
-
-service_type
-
-vehicle_id
+vehicle
 
 subscription
 
-assignment state
+any other condition
 
-area/zone
-
-date/time
-
-anything else
+Find the FIRST filter that excludes the fresh assignment.
 
 ==================================================
 
-4. FIND THE EXACT QUERY USED BY DAILY ROUTE
+6. IDENTITY CHECK
 
 ==================================================
 
-Do the same for Daily Route.
-
-Do NOT assume it uses useTodayAssignment.
-
-Identify the actual source.
-
-Then test:
-
-NEW ASSIGNMENT RETURNED = YES/NO
-
-==================================================
-
-5. FIND THE EXACT QUERY USED BY EARNINGS
-
-==================================================
-
-Identify the actual query/data source used for:
-
-Daily Potential
-
-Today's Earned
-
-Test the same fresh assignment.
-
-Remember:
-
-ASSIGNED = Daily Potential may increase.
-
-COMPLETED = Today's Earned increases.
-
-Do NOT count assigned work as completed earnings.
-
-==================================================
-
-6. CRITICAL COMPARISON
-
-==================================================
-
-We need this exact table:
-
-                        DB    HOME QUERY    ROUTE QUERY    EARNINGS QUERY
-
-Fresh assignment       YES       ?              ?              ?
-
-Do not mark Home/Route/Earnings PASS because a function exists.
-
-We need actual returned rows.
-
-==================================================
-
-7. TEST THE 10-SECOND REFRESH
-
-==================================================
-
-After Admin assignment:
-
-DO NOT manually refresh the app.
-
-Observe:
-
-Realtime event received?
-
-YES/NO
-
-Query invalidated?
-
-YES/NO
-
-Query refetched?
-
-YES/NO
-
-Fresh assignment returned?
-
-YES/NO
-
-Wait 10 seconds.
-
-After safety refresh:
-
-Fresh assignment returned?
-
-YES/NO
-
-If the 10-second refresh also returns old data, then this is NOT a realtime
-
-problem. It is a DATA QUERY / IDENTITY / FILTER problem.
-
-==================================================
-
-8. CANONICAL PARTNER ID
-
-==================================================
-
-Print for the CURRENT logged-in partner:
+For the same test record compare:
 
 auth.users.id
 
@@ -379,271 +329,93 @@ resolved partners.id
 
 assignments.partner_id
 
-service.partner_id if such a field exists
+Do not assume they are equal.
 
-current query partner filter
+Show:
 
-These values must be mapped correctly.
-
-Do NOT assume auth.uid() = partners.id.
-
-==================================================
-
-9. DATE/TIME
-
-==================================================
-
-This is critical.
-
-Print:
-
-database scheduled_date
-
-database service date/time
-
-current IST date
-
-Partner App date
-
-query date filter
-
-Check whether the assignment is being excluded because:
-
-UTC date != IST date
-
-scheduled_date != service date
-
-midnight rollover
-
-timestamp conversion
-
-Do NOT add another date conversion until the actual mismatch is shown.
-
-==================================================
-
-10. STATUS FILTER
-
-==================================================
-
-Print the actual status values for the fresh assignment.
-
-Then compare them to every query's filters.
-
-For example:
-
-assignment status = ?
-
-service status = ?
-
-booking status = ?
-
-If the new Admin-assigned service is filtered out because the query expects a
-
-different status, identify that exact condition.
-
-==================================================
-
-11. IMPORTANT — NOTIFICATION IS ALREADY WORKING
-
-==================================================
-
-The Partner App already receives:
-
-"New Service Assigned"
-
-Therefore DO NOT spend time fixing notifications.
-
-Use the notification only as the trigger that tells us:
-
-"an assignment happened."
-
-The assignment data itself must then be read from the authoritative database.
-
-==================================================
-
-12. DO NOT MERGE MULTIPLE SOURCES BLINDLY
-
-==================================================
-
-The latest change says the hook now merges:
-
-today's services
-
-+
-
-assignment-linked services
-
-Do not keep adding more merge paths.
-
-First determine which ONE authoritative record should represent Admin
-
-assignment.
-
-Preferred:
-
-assignments.partner_id = canonical partners.id
-
-Then derive:
-
-service
-
-customer
-
-vehicle
-
-route
-
-earning potential
-
-from the authoritative assignment/service relationship.
-
-Avoid creating multiple competing definitions of "today's work."
-
-==================================================
-
-13. UI UPDATE CHECK
-
-==================================================
-
-If the query DOES return the new assignment, but Home still shows old values,
-
-then the problem is now UI state/cache.
-
-Trace:
-
-query returned new row
-
-→ hook state updated?
-
-→ selector/derived data updated?
-
-→ React component rerendered?
-
-→ displayed count changed?
-
-Find the exact point.
-
-==================================================
-
-14. REQUIRED FORENSIC RESULT
-
-==================================================
-
-Return exactly:
-
-Fresh booking:
+CURRENT APP PARTNER ID:
 
 ____
 
-Assignment:
+ASSIGNMENT PARTNER ID:
 
 ____
 
-Partner:
+If they differ, that is the failure.
+
+==================================================
+
+7. DATE CHECK
+
+==================================================
+
+Show:
+
+DB scheduled_date:
 
 ____
 
-Scheduled date:
+DB timestamp:
 
 ____
 
-DB assignment exists:
+Current IST date:
 
-PASS/FAIL
+____
 
-Home source query returns assignment:
+Query date:
 
-PASS/FAIL
+____
 
-Route source query returns assignment:
-
-PASS/FAIL
-
-Earnings source query sees assignment:
-
-PASS/FAIL
-
-Realtime event:
-
-PASS/FAIL
-
-Query invalidation:
-
-PASS/FAIL
-
-10s refresh:
-
-PASS/FAIL
-
-Canonical partner ID:
-
-PASS/FAIL
-
-Date filter:
-
-PASS/FAIL
-
-Status filter:
-
-PASS/FAIL
-
-UI rerender:
-
-PASS/FAIL
+Confirm the assignment is not disappearing because of UTC/IST conversion.
 
 ==================================================
 
-15. FIRST DIVERGENCE
+8. STATUS CHECK
 
 ==================================================
 
-State ONLY the first point where the fresh assignment disappears.
+Show the actual values of:
 
-Examples:
+booking.status
 
-"Assignment exists in DB but Home query returns 0 rows because ______."
+assignment.status
 
-OR:
+service.status
 
-"Home query returns the assignment but derived Home state excludes it because
-
-______."
-
-OR:
-
-"Query returns new state but UI does not rerender because ______."
+Compare those to the filters used by Home/Route/Earnings.
 
 ==================================================
 
-FINAL RULE
+9. NO MORE GENERIC REPORTS
 
-DO NOT make another broad architecture change.
+==================================================
 
-DO NOT update src/routes/index.tsx.
+Do NOT say:
 
-DO NOT claim this is fixed because the assignment exists in the database.
+"architecture is correct"
 
-Find the FIRST REAL DIVERGENCE and fix ONLY that layer.
+"universal resolver is active"
 
-AFTER the fix:
+"realtime is configured"
 
-Admin assigns
+unless the fresh test proves it.
 
-→ assignment exists
+We need one exact statement:
 
-→ Home updates
+THE ASSIGNMENT DISAPPEARS HERE:
 
-→ Daily Route updates
+________
 
-→ Map updates
+ROOT CAUSE:
 
-→ Daily Potential updates
+________
 
-→ in-app notification
+EXACT QUERY/FILTER:
 
-WITHOUT manual refresh.
+________
 
-FCM remains out of scope until this passes.`}
+Do not fix anything yet.`}
         </div>
       </div>
     </div>
