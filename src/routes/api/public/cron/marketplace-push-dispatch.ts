@@ -193,8 +193,30 @@ async function dispatchPending() {
 
     try {
       console.log(`[BOOKING-PUSH:CANDIDATE] partner=${r.partner_id} eligible=true reason=sending_push type=${data.type}`);
+      
+      // UNIVERSAL P0 FIX: Identity fragmentation resolution for Marketplace Pushes.
+      let targetUserId = r.partner_id;
+      const { data: partner } = await (supabaseAdmin as any).from("partners").select("phone").eq("id", r.partner_id).maybeSingle();
+      if (partner?.phone) {
+        const { data: tokens } = await (supabaseAdmin as any).from("push_tokens").select("id").eq("user_id", r.partner_id).is("invalid_at", null).limit(1);
+        if (!tokens || tokens.length === 0) {
+          const { data: others } = await (supabaseAdmin as any).from("partners").select("id").eq("phone", partner.phone).neq("id", r.partner_id);
+          const otherPartnerIds = (others || []).map((p: any) => p.id);
+          const { data: customers } = await (supabaseAdmin as any).from("customer_profiles").select("id").eq("phone", partner.phone);
+          const customerIds = (customers || []).map((c: any) => c.id);
+          const allIdentityIds = [...new Set([...otherPartnerIds, ...customerIds])];
+          
+          if (allIdentityIds.length > 0) {
+            const { data: altTokens } = await (supabaseAdmin as any).from("push_tokens").select("user_id").in("user_id", allIdentityIds).is("invalid_at", null).limit(1);
+            if (altTokens && altTokens.length > 0) {
+              targetUserId = altTokens[0].user_id;
+            }
+          }
+        }
+      }
+
       const result = await sendOfferPush({
-        userId: r.partner_id,
+        userId: targetUserId,
         title,
         body,
         data,
