@@ -270,7 +270,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
     const { token } = await FirebaseMessaging.getToken();
     // Token retrieved successfully
     if (token) {
-      console.log(`[PARTNER-FCM] token present: length=${token.length}`);
+      // Processing retrieved token
       await upsertToken(token);
     }
   } catch (e: any) {
