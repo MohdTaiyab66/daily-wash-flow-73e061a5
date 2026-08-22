@@ -48,7 +48,6 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
 
     const onVisible = () => {
       if (document.visibilityState === "visible") {
-        console.log(`[PARTNER-REALTIME] [WINDOW] Visibility change, refreshing`);
         refresh("VISIBILITY_CHANGE");
       }
     };
