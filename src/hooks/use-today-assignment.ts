@@ -81,34 +81,47 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     .maybeSingle();
   if (aErr) throw aErr;
 
-  if (!a) {
-    const { data: loose, error: lErr } = await supabase
-      .from("services")
-      .select("id,customer_id,vehicle_id,status,started_at,completed_at,rate_per_car,scheduled_date")
-      .eq("partner_id", partnerId)
-      .eq("scheduled_date", today);
-    if (lErr) throw lErr;
-    // Same filter the Live Route screen uses — bookings covered elsewhere are
-    // not part of the partner's route, so counts can never diverge.
-    const tds = (loose ?? []).filter((s: any) => s.status !== "covered_by_booking");
-    const cCount = tds.filter((s: any) => s.status === "completed").length;
-    const uCount = tds.filter((s: any) => s.status === "unavailable" && s.unavailable_reason !== "dirty_vehicle").length;
-    const nCount = tds.filter((s: any) => s.status === "unavailable" && s.unavailable_reason === "dirty_vehicle").length;
-    const standardRate = 17;
-    const exceptionRate = 12;
+  // FALLBACK: When no active assignment record exists for today, or when we want to ensure
+  // any loose services assigned to the partner are counted, we fetch today's services directly.
+  const { data: loose, error: lErr } = await supabase
+    .from("services")
+    .select("id,customer_id,vehicle_id,status,started_at,completed_at,rate_per_car,scheduled_date,assignment_id")
+    .eq("partner_id", partnerId)
+    .eq("scheduled_date", today);
+  
+  if (lErr) throw lErr;
 
+  // Filter out services that are part of a booking that has been "covered" by another service
+  const tds = (loose ?? []).filter((s: any) => s.status !== "covered_by_booking");
+  
+  // Calculate metrics
+  const cCount = tds.filter((s: any) => s.status === "completed").length;
+  const uCount = tds.filter((s: any) => s.status === "unavailable" && s.unavailable_reason !== "dirty_vehicle").length;
+  const nCount = tds.filter((s: any) => s.status === "unavailable" && s.unavailable_reason === "dirty_vehicle").length;
+  const standardRate = 17;
+  const exceptionRate = 12;
+
+  const currentEarned = (cCount * standardRate) + (uCount * exceptionRate) + (nCount * exceptionRate);
+  
+  // Unique vehicles today (the primary metric for "Total Customers")
+  const uniqueVehiclesToday = new Set(tds.map((s: any) => s.vehicle_id).filter(Boolean)).size;
+
+  if (!a) {
     return {
       assignment: null, all: [], today: tds, nextDate: null,
-      todaysCustomers: tds.length,
+      todaysCustomers: uniqueVehiclesToday,
       completedToday: cCount,
       unavailableToday: uCount,
       needWashToday: nCount,
       remainingToday: tds.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
-      actualEarnedToday: (cCount * standardRate) + (uCount * exceptionRate) + (nCount * exceptionRate),
+      actualEarnedToday: currentEarned,
       potentialDailyEarnings: tds.length * standardRate,
       potentialMonthlyEarnings: (tds.length * standardRate) * 26,
-      assignmentTotalCustomers: 0, assignmentCompleted: 0,
-      targetCars: 0, expectedDailyEarnings: tds.length * standardRate, expectedMonthlyEarnings: (tds.length * standardRate) * 26,
+      assignmentTotalCustomers: uniqueVehiclesToday, 
+      assignmentCompleted: cCount,
+      targetCars: 0, 
+      expectedDailyEarnings: tds.length * standardRate, 
+      expectedMonthlyEarnings: (tds.length * standardRate) * 26,
       fetchedAt: Date.now(),
     };
   }
