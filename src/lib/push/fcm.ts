@@ -209,7 +209,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         await Preferences.set({ key: "urbanwash.last_token_upload_at", value: new Date().toISOString() });
         await Preferences.set({ key: "urbanwash.last_uploaded_token", value: token });
         await Preferences.set({ key: "urbanwash.last_token_upload_error", value: "" });
-        console.log(`[CUSTOMER-FCM-REGISTRATION:06] TOKEN_BACKEND_REGISTRATION_SUCCESS`);
+        // Token registration success
       } catch { /* noop */ }
     };
     const markErr = async (msg: string) => {
