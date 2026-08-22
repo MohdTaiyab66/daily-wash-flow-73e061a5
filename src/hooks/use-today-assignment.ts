@@ -58,8 +58,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   }
   const now = new Date();
   const today = getTodayIST();
-  const isMonday = now.getDay() === 1; // getDay() is fine for Monday check as long as we're consistent, but IST is better
-
+  const isMonday = now.getDay() === 1;
 
   // Resolve canonical partner identity for data fetching
   const { data: me } = await supabase
@@ -81,45 +80,59 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     .maybeSingle();
   if (aErr) throw aErr;
 
-  if (!a) {
-    const { data: loose, error: lErr } = await supabase
-      .from("services")
-      .select("id,customer_id,vehicle_id,status,started_at,completed_at,rate_per_car,scheduled_date")
-      .eq("partner_id", partnerId)
-      .eq("scheduled_date", today);
-    if (lErr) throw lErr;
-    // Same filter the Live Route screen uses — bookings covered elsewhere are
-    // not part of the partner's route, so counts can never diverge.
-    const tds = (loose ?? []).filter((s: any) => s.status !== "covered_by_booking");
-    const cCount = tds.filter((s: any) => s.status === "completed").length;
-    const uCount = tds.filter((s: any) => s.status === "unavailable" && s.unavailable_reason !== "dirty_vehicle").length;
-    const nCount = tds.filter((s: any) => s.status === "unavailable" && s.unavailable_reason === "dirty_vehicle").length;
-    const standardRate = 17;
-    const exceptionRate = 12;
+  // AUTHORITATIVE FALLBACK: Always fetch loose services for today regardless of assignment ID
+  // This handles the "Failure A/B" where Admin Assign happens but Assignment ID linkage takes a moment.
+  const { data: looseToday, error: lErr } = await supabase
+    .from("services")
+    .select("id,assignment_id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,locked_position,manual_sequence_no,is_emergency,cluster_id,eta_at,travel_min,distance_km,destination_lat,destination_lng,destination_source,scheduled_date,customer_id,vehicle_id,rate_per_car,customers(full_name,area,address_line,phone,service_required_before,preferred_time,time_window_type,exact_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
+    .eq("partner_id", partnerId)
+    .eq("scheduled_date", today);
+  
+  if (lErr) throw lErr;
 
+  const tds = (looseToday ?? []).filter((s: any) => s.status !== "covered_by_booking");
+  const cCountToday = tds.filter((s: any) => s.status === "completed").length;
+  const uCountToday = tds.filter((s: any) => s.status === "unavailable" && s.unavailable_reason !== "dirty_vehicle").length;
+  const nCountToday = tds.filter((s: any) => s.status === "unavailable" && s.unavailable_reason === "dirty_vehicle").length;
+  
+  const standardRateDefault = 17;
+  const exceptionRate = 12;
+
+  const earnedToday = (cCountToday * standardRateDefault) + (uCountToday * exceptionRate) + (nCountToday * exceptionRate);
+  const uniqueVehiclesToday = new Set(tds.map((s: any) => s.vehicle_id).filter(Boolean)).size;
+
+  if (!a) {
     return {
       assignment: null, all: [], today: tds, nextDate: null,
-      todaysCustomers: tds.length,
-      completedToday: cCount,
-      unavailableToday: uCount,
-      needWashToday: nCount,
+      todaysCustomers: uniqueVehiclesToday,
+      completedToday: cCountToday,
+      unavailableToday: uCountToday,
+      needWashToday: nCountToday,
       remainingToday: tds.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
-      actualEarnedToday: (cCount * standardRate) + (uCount * exceptionRate) + (nCount * exceptionRate),
-      potentialDailyEarnings: tds.length * standardRate,
-      potentialMonthlyEarnings: (tds.length * standardRate) * 26,
-      assignmentTotalCustomers: 0, assignmentCompleted: 0,
-      targetCars: 0, expectedDailyEarnings: tds.length * standardRate, expectedMonthlyEarnings: (tds.length * standardRate) * 26,
+      actualEarnedToday: earnedToday,
+      potentialDailyEarnings: tds.length * standardRateDefault,
+      potentialMonthlyEarnings: (tds.length * standardRateDefault) * 26,
+      assignmentTotalCustomers: uniqueVehiclesToday, 
+      assignmentCompleted: cCountToday,
+      targetCars: 0, 
+      expectedDailyEarnings: tds.length * standardRateDefault, 
+      expectedMonthlyEarnings: (tds.length * standardRateDefault) * 26,
       fetchedAt: Date.now(),
     };
   }
 
-  const { data: services, error: sErr } = await supabase
+  // Fetch all services for the assignment to get "all" and "nextDate"
+  const { data: allServices, error: sErr } = await supabase
     .from("services")
     .select("id,assignment_id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,locked_position,manual_sequence_no,is_emergency,cluster_id,eta_at,travel_min,distance_km,destination_lat,destination_lng,destination_source,scheduled_date,customer_id,vehicle_id,rate_per_car,customers(full_name,area,address_line,phone,service_required_before,preferred_time,time_window_type,exact_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
     .eq("assignment_id", a.id);
   if (sErr) throw sErr;
-  const all = (services ?? []).filter((s: any) => s.status !== "covered_by_booking");
-  const todays = all.filter((s: any) => s.scheduled_date === today);
+
+  const all = (allServices ?? []).filter((s: any) => s.status !== "covered_by_booking");
+  
+  // Merge assignment services with loose today services to ensure zero-latency propagation
+  const assignmentServiceIds = new Set(all.map(s => s.id));
+  const mergedToday = [...all.filter((s: any) => s.scheduled_date === today), ...tds.filter(s => !assignmentServiceIds.has(s.id))];
 
   const nextDate = all
     .map((s: any) => s.scheduled_date as string)
@@ -127,52 +140,37 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     .sort()[0] ?? null;
 
   const targetCars = Number(a.target_cars || 0);
-  const ratePerCar = Number(a.rate_per_car || 17);
+  const ratePerCar = Number(a.rate_per_car || standardRateDefault);
   
-  // SINGLE SOURCE OF TRUTH: 
-  // For an active assignment, the customer count is derived from unique vehicles 
-  // CURRENTLY ATTACHED to the assignment.
-  // SINGLE SOURCE OF TRUTH:
-  // For an active assignment, the customer count is derived from unique vehicles 
-  // that have at least one service scheduled for TODAY.
-  const assignmentTotalCustomers = new Set(todays.map((s: any) => s.vehicle_id ?? s.id).filter(Boolean)).size;
-  
-  // Earning calculation MUST use assignmentTotalCustomers (18), not targetCars (15).
-  // If no customers are assigned yet, we fall back to targetCars for projection.
-  const effectiveCustomerCount = assignmentTotalCustomers > 0 ? assignmentTotalCustomers : targetCars;
+  const mergedTotalCustomers = new Set(mergedToday.map((s: any) => s.vehicle_id).filter(Boolean)).size;
+  const effectiveCustomerCount = mergedTotalCustomers > 0 ? mergedTotalCustomers : targetCars;
   
   const potentialDailyEarnings = effectiveCustomerCount * ratePerCar;
-  const potentialMonthlyEarnings = potentialDailyEarnings * 26;
+  
+  const cCountMerged = mergedToday.filter((s: any) => s.status === "completed").length;
+  const uCountMerged = mergedToday.filter((s: any) => s.status === "unavailable" && s.unavailable_reason !== "dirty_vehicle").length;
+  const nCountMerged = mergedToday.filter((s: any) => s.status === "unavailable" && s.unavailable_reason === "dirty_vehicle").length;
 
-  const standardRate = ratePerCar || 17;
-  const exceptionRate = 12;
-
-  const cCount = todays.filter((s: any) => s.status === "completed").length;
-  const uCount = todays.filter((s: any) => s.status === "unavailable" && s.unavailable_reason !== "dirty_vehicle").length;
-  const nCount = todays.filter((s: any) => s.status === "unavailable" && s.unavailable_reason === "dirty_vehicle").length;
-
-  const actualEarnedToday = (cCount * standardRate) + (uCount * exceptionRate) + (nCount * exceptionRate);
-
-  const assignmentCompleted = all.filter((s: any) => s.status === "completed").length;
+  const actualEarnedTodayMerged = (cCountMerged * ratePerCar) + (uCountMerged * exceptionRate) + (nCountMerged * exceptionRate);
 
   return {
     assignment: a,
     all,
-    today: todays,
+    today: mergedToday,
     nextDate,
-    todaysCustomers: isMonday ? 0 : todays.length,
-    completedToday: isMonday ? 0 : cCount,
-    unavailableToday: isMonday ? 0 : uCount,
-    needWashToday: isMonday ? 0 : nCount,
-    remainingToday: isMonday ? 0 : todays.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
-    actualEarnedToday: isMonday ? 0 : actualEarnedToday,
+    todaysCustomers: isMonday ? 0 : mergedTotalCustomers,
+    completedToday: isMonday ? 0 : cCountMerged,
+    unavailableToday: isMonday ? 0 : uCountMerged,
+    needWashToday: isMonday ? 0 : nCountMerged,
+    remainingToday: isMonday ? 0 : mergedToday.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
+    actualEarnedToday: isMonday ? 0 : actualEarnedTodayMerged,
     potentialDailyEarnings,
-    potentialMonthlyEarnings,
-    assignmentTotalCustomers,
-    assignmentCompleted: Math.min(assignmentCompleted, assignmentTotalCustomers),
+    potentialMonthlyEarnings: potentialDailyEarnings * 26,
+    assignmentTotalCustomers: mergedTotalCustomers,
+    assignmentCompleted: cCountMerged,
     targetCars,
     expectedDailyEarnings: potentialDailyEarnings,
-    expectedMonthlyEarnings: potentialMonthlyEarnings,
+    expectedMonthlyEarnings: potentialDailyEarnings * 26,
     fetchedAt: Date.now(),
   };
 }
@@ -186,11 +184,6 @@ export type TodayAssignmentMetrics = {
   successRate: number; // 0..1
 };
 
-/**
- * Shared today-assignment query with:
- *  - localStorage-backed last-successful fallback + timestamp
- *  - retry/success/failure metrics for the status banner
- */
 export function useTodayAssignment() {
   const [metrics, setMetrics] = useState<TodayAssignmentMetrics>({
     successes: 0, failures: 0, retryAttempts: 0,
@@ -203,12 +196,12 @@ export function useTodayAssignment() {
     queryFn: fetchTodayAssignment,
     staleTime: 5_000,
     refetchOnMount: "always",
-    refetchInterval: 10_000, // 10-second safety refresh as authoritative net
+    refetchInterval: 10_000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     placeholderData: (prev) => prev ?? cachedRef.current ?? undefined,
     retry: (failureCount, error) => {
-      setMetrics((m) => ({
+      setMetrics((m: any) => ({
         ...m,
         retryAttempts: m.retryAttempts + 1,
         lastError: (error as any)?.message ?? String(error),
@@ -222,7 +215,7 @@ export function useTodayAssignment() {
     if (q.isSuccess && q.data) {
       writeCache(q.data);
       cachedRef.current = q.data;
-      setMetrics((m) => {
+      setMetrics((m: any) => {
         const successes = m.successes + 1;
         const total = successes + m.failures;
         return {
@@ -238,7 +231,7 @@ export function useTodayAssignment() {
 
   useEffect(() => {
     if (q.isError) {
-      setMetrics((m) => {
+      setMetrics((m: any) => {
         const failures = m.failures + 1;
         const total = m.successes + failures;
         return {

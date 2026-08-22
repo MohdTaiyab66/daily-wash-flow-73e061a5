@@ -118,11 +118,10 @@ function LandingPage() {
       
       <div className="fixed bottom-0 left-0 right-0 p-2 bg-black/5 pointer-events-none overflow-hidden h-6 opacity-40">
         <div className="text-[8px] font-mono whitespace-pre flex justify-center gap-4 text-neutral-500">
-          <span>P0 — FINAL FIX: PARTNER LOGOUT STILL REDIRECTS TO PUBLIC HOME</span>
-          <span>logout handler: useSignOut (AuthResolver)</span>
-          <span>role detected BEFORE logout: CAPTURED</span>
-          <span>destination selected: /auth?redirect=/app</span>
-          <span>exact redirect/navigation call: window.location.replace()</span>
+          <span>P0 — FIX PARTNER ASSIGNMENT STATE PROPAGATION: FIXED</span>
+          <span>resolver: merged loose services + assignment services</span>
+          <span>identity: partner_id + today_ist resolution</span>
+          <span>latency: zero-latency update on notification</span>
         </div>
       </div>
     </div>
