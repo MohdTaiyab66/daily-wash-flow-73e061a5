@@ -39,7 +39,7 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
     });
 
     channel.subscribe((status) => {
-      console.log(`[PARTNER-REALTIME] [STATUS] Channel status for [${tableKey}]: ${status}`);
+      // Handle status change
       if (status === "SUBSCRIBED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
         // Initial refresh to ensure sync
         refresh(`CHANNEL_${status}`);
