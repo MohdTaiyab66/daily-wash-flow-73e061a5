@@ -61,10 +61,18 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   const isMonday = now.getDay() === 1; // getDay() is fine for Monday check as long as we're consistent, but IST is better
 
 
+  const { data: me } = await supabase
+    .from("partners")
+    .select("id")
+    .or(`id.eq.${u.user.id},phone.eq.${u.user.phone?.replace('91', '') || 'NONE'},email.eq.${u.user.email}`)
+    .maybeSingle();
+
+  const partnerId = me?.id || u.user.id;
+
   const { data: a, error: aErr } = await supabase
     .from("assignments")
     .select("*")
-    .eq("partner_id", u.user.id)
+    .eq("partner_id", partnerId)
     .eq("status", "active")
     .gte("end_date", today)
     .order("start_date", { ascending: false })
