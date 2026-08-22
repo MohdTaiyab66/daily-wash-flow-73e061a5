@@ -155,7 +155,7 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
     if (r.vehicle_category) data.vehicle = r.vehicle_category;
 
     try {
-      // Identity fragmentation resolution for Marketplace Offers.
+      // Resolve target user identity for pushes
       let targetUserId = r.partner_id;
       const { data: partner } = await sb.from("partners").select("phone").eq("id", r.partner_id).maybeSingle();
       if (partner?.phone) {
