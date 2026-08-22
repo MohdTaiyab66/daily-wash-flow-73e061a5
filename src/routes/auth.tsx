@@ -245,7 +245,7 @@ function AuthPage() {
 
       await supabase.auth.updateUser({ data: { full_name: name.trim(), phone, role } });
       await ensureStaffRole(role as "admin" | "partner", name.trim());
-      console.log("[PARTNER-AUTH:09] PARTNER_HOME_OPENED");
+      // Navigation after profile completion
       navigate({ to: nextRoute as any });
     } catch (e: any) {
       toast.error(e?.message || "Could not complete sign in");
