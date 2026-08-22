@@ -58,7 +58,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   }
 
   // Resolve canonical partner identity using the secure resolver
-  const { data: partnerId } = await supabase.rpc("resolve_partner_id", { p_user_id: u.user.id });
+  const { data: partnerId } = await supabase.rpc("resolve_partner_id", { u_id: u.user.id } as any);
   
   if (!partnerId) {
     return {
