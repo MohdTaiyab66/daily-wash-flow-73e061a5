@@ -144,6 +144,4 @@ TypeError: __vite_ssr_import_5__.Route.update is not a function
       </footer>
     </div>
   );
-};
-
-export default Route;
+}
