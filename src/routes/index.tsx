@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
-import { Shield, Car, CheckCircle2, Star, MapPin, Clock } from 'lucide-react';
+import { Shield, Car, CheckCircle2, MapPin, Clock } from 'lucide-react';
 
 export const Route = createFileRoute('/')({
   component: LandingPage,
@@ -228,12 +228,8 @@ function LandingPage() {
               {"\n"}FINAL ACCEPTANCE:
               {"\n"}Fresh Admin assignment to Deepak, Vikram, Imran, Aarav must work E2E.
               {"\n"}Implementation is complete only when at least THREE NON-DEEPAK partners receive and DISPLAY their fresh Admin assignment.
-            </div>
-          </div>
-        </div>
-      </div>
-            <div className="bg-black/40 p-2 mt-2 border border-slate-800 rounded whitespace-pre-wrap">
-              DEEPAK FIRST SUCCESS:
+              {"\n"}
+              {"\n"}DEEPAK FIRST SUCCESS:
               {"\n"}Admin selected ID (partners.id) == auth.users.id (e9f5d767-73a6-4844-806f-199921eca903).
               {"\n"}
               {"\n"}NON-DEEPAK FIRST FAILURE (Vikram Singh):
@@ -251,116 +247,9 @@ function LandingPage() {
               {"\n"}VERIFICATION REQUIRED:
               {"\n"}At least 3 non-Deepak partners (Vikram, Imran, Aarav) must log in and receive fresh Admin assignments to confirm the fix works population-wide.
             </div>
-              {"\n"}- verify a brand-new partner
-              {"\n"}
-              {"\n"}Then separately state:
-              {"\n"}\"Population-wide code/database audit\"
-              {"\n"}and
-              {"\n"}\"Real-device sampled validation\"
-              {"\n"}
-              {"\n"}Do not confuse the two.
-              {"\n"}
-              {"\n"}==================================================
-              {"\n"}
-              {"\n"}13. BRAND-NEW PARTNER TEST
-              {"\n"}
-              {"\n"}==================================================
-              {"\n"}
-              {"\n"}Create one new partner account.
-              {"\n"}No manual token or notification database setup.
-              {"\n"}Login on the latest Partner APK.
-              {"\n"}
-              {"\n"}Expected automatically:
-              {"\n"}FCM registration
-              {"\n"}Realtime
-              {"\n"}initial assignment sync
-              {"\n"}Home
-              {"\n"}Available
-              {"\n"}Route
-              {"\n"}Map
-              {"\n"}Earnings
-              {"\n"}Notifications
-              {"\n"}
-              {"\n"}Admin assigns a new booking.
-              {"\n"}
-              {"\n"}Expected:
-              {"\n"}assignment immediately appears
-              {"\n"}in-app notification
-              {"\n"}Home update
-              {"\n"}Route update
-              {"\n"}Map update
-              {"\n"}Earnings update
-              {"\n"}FCM push if valid
-              {"\n"}
-              {"\n"}==================================================
-              {"\n"}
-              {"\n"}14. UNIVERSAL ACCEPTANCE TEST
-              {"\n"}
-              {"\n"}==================================================
-              {"\n"}
-              {"\n"}The exact same functions/components must handle:
-              {"\n"}Deepak
-              {"\n"}Vikram
-              {"\n"}Imran
-              {"\n"}Aarav
-              {"\n"}all remaining partners
-              {"\n"}future partners
-              {"\n"}
-              {"\n"}No partner-specific configuration.
-              {"\n"}
-              {"\n"}==================================================
-              {"\n"}
-              {"\n"}15. FINAL REPORT
-              {"\n"}
-              {"\n"}==================================================
-              {"\n"}
-              {"\n"}TOTAL CURRENT PARTNERS = 26
-              {"\n"}REAL = 17
-              {"\n"}TRIAL = 9
-              {"\n"}UNIVERSAL CODE PATH = PASS
-              {"\n"}ALL EXISTING PARTNERS SUPPORTED = PASS
-              {"\n"}FUTURE PARTNER AUTO-PROVISIONING = PASS
-              {"\n"}NEW PARTNER TEST = PASS
-              {"\n"}REAL DEVICE SAMPLE = PASS
-              {"\n"}
-              {"\n"}Also provide the list/count of partners who have:
-              {"\n"}TOKEN MISSING = 24
-              {"\n"}LOGIN REQUIRED = 0
-              {"\n"}DATA ERROR = 0
-              {"\n"}
-              {"\n"}Do NOT manually alter those records just to improve the statistics.
-              {"\n"}
-              {"\n"}==================================================
-              {"\n"}
-              {"\n"}FINAL ACCEPTANCE
-              {"\n"}
-              {"\n"}The fix is NOT considered \"Deepak/Vikram/Imran working\".
-              {"\n"}
-              {"\n"}The implementation is considered complete only when:
-              {"\n"}ANY CURRENT PARTNER
-              {"\n"}OR
-              {"\n"}ANY FUTURE PARTNER
-              {"\n"}can:
-              {"\n"}LOGIN
-              {"\n"}→ become a fully operational Partner
-              {"\n"}→ receive Admin assignment
-              {"\n"}→ see it in-app
-              {"\n"}→ Home updates
-              {"\n"}→ Route updates
-              {"\n"}→ Map updates
-              {"\n"}→ Earnings updates
-              {"\n"}→ notification appears
-              {"\n"}→ push works when a valid token exists.
-              {"\n"}
-              {"\n"}ONE UNIVERSAL IMPLEMENTATION FOR ALL PARTNERS.
-              {"\n"}
-              {"\n"}NO SPECIAL CASES.
-            </div>
           </div>
         </div>
       </div>
-
-
     </div>
   );
 }
