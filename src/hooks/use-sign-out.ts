@@ -9,32 +9,37 @@ export function useSignOut() {
 
   const signOut = async (redirectTo?: string) => {
     try {
+      // 1. Capture role BEFORE session clear
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id || null;
+      const email = session?.user?.email || "";
 
-      // 1. Stop FCM (invalidates token in DB for this device/user)
+      console.log("[LOGOUT-TRACE] Role detected BEFORE logout:", email);
+
+      // 2. Stop FCM (invalidates token in DB for this device/user)
       if (userId) {
         await stopFcm(userId);
       }
 
-      // 2. Tear down realtime channels while the auth token is still valid.
+      // 3. Tear down realtime channels while the auth token is still valid.
       try {
         await supabase.removeAllChannels();
       } catch {
         /* proceed with sign-out */
       }
 
-      // 3. Sign out from Supabase
+      // 4. Sign out from Supabase
       await supabase.auth.signOut();
+      
+      console.log("[LOGOUT-TRACE] Supabase session cleared");
 
-      // 4. Clear all cached queries to prevent data contamination
+      // 5. Clear all cached queries to prevent data contamination
       queryClient.clear();
 
-      // 4. Force reload to ensure all stores and listeners are reset
+      // 6. Force reload to ensure all stores and listeners are reset
       let finalRedirect = redirectTo;
       if (!finalRedirect) {
-        // Determine redirect destination based on identity
-        const email = session?.user?.email || "";
+        // Determine redirect destination based on identity captured BEFORE logout
         if (email.endsWith("@admin.urbanwash.app")) {
           finalRedirect = "/auth?redirect=/admin";
         } else if (email.endsWith("@partner.urbanwash.app")) {
@@ -46,10 +51,11 @@ export function useSignOut() {
         }
       }
 
-      window.location.href = finalRedirect;
+      console.log("[LOGOUT-TRACE] Destination selected:", finalRedirect);
+      window.location.replace(finalRedirect);
     } catch (error) {
       console.error("Logout error:", error);
-      window.location.href = "/auth";
+      window.location.replace("/auth");
     }
   };
 
