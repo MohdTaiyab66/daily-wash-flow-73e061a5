@@ -47,7 +47,8 @@ function RoutePage() {
       ["partner-open-offers-home"],
       ["partner-booking-requests"],
       ["partner-services"],
-      ["partner-earnings"]
+      ["partner-earnings"],
+      ["history"]
     ]
   );
   
