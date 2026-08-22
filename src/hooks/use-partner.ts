@@ -42,10 +42,19 @@ export function useToggleOnline() {
       return;
     }
     
+    // Resolve canonical partner identity for online toggle
+    const { data: me } = await supabase
+      .from("partners")
+      .select("id")
+      .or(`id.eq.${session.user.id},phone.eq.${session.user.phone?.replace('91', '') || 'NONE'},email.eq.${session.user.email}`)
+      .maybeSingle();
+
+    const partnerId = me?.id || session.user.id;
+
     const { error } = await supabase
       .from("partners")
       .update({ availability: on ? "online" : "offline", last_seen: new Date().toISOString() })
-      .eq("id", session.user.id);
+      .eq("id", partnerId);
     if (error) throw error;
     // Optimistic local update; do NOT call invalidateQueries — a stale refetch
     // returning the previous value would visibly flip the switch back.
