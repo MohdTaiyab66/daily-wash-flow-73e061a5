@@ -102,6 +102,7 @@ function TopBar() {
               qc.invalidateQueries({ queryKey: ["partner-booking-requests"] });
               qc.invalidateQueries({ queryKey: ["partner-services"] });
               qc.invalidateQueries({ queryKey: ["partner-earnings"] });
+              qc.invalidateQueries({ queryKey: ["history"] });
             }
           })
         .subscribe((status) => {
