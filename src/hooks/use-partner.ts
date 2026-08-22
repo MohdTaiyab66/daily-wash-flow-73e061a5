@@ -10,11 +10,13 @@ export function usePartner() {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session?.user) return null;
       
-      // Resolve canonical partner identity using phone/email link
+      const { data: partnerId } = await supabase.rpc("resolve_partner_id", { u_id: session.user.id } as any);
+      if (!partnerId) return null;
+
       const { data, error } = await supabase
         .from("partners")
         .select("*")
-        .or(`id.eq.${session.user.id},phone.eq.${session.user.phone?.replace('91', '') || 'NONE'},email.eq.${session.user.email}`)
+        .eq("id", partnerId)
         .maybeSingle();
         
       if (error) throw error;
@@ -42,14 +44,8 @@ export function useToggleOnline() {
       return;
     }
     
-    // Resolve canonical partner identity for online toggle
-    const { data: me } = await supabase
-      .from("partners")
-      .select("id")
-      .or(`id.eq.${session.user.id},phone.eq.${session.user.phone?.replace('91', '') || 'NONE'},email.eq.${session.user.email}`)
-      .maybeSingle();
-
-    const partnerId = me?.id || session.user.id;
+    const { data: partnerId } = await supabase.rpc("resolve_partner_id", { u_id: session.user.id } as any);
+    if (!partnerId) return;
 
     const { error } = await supabase
       .from("partners")
