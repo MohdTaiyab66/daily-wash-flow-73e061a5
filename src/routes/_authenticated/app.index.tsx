@@ -57,7 +57,9 @@ function HomePage() {
   useRealtimeInvalidation(["assignments", "services", "partner_notifications"], [
     ["today-assignment"],
     ["partner-open-offers-home"],
-    ["available-work-summary", partner?.home_area]
+    ["available-work-summary", partner?.home_area],
+    ["partner-notifications-unread"],
+    ["partner-earnings"]
   ]);
 
   // Ensure we refetch on mount to clear any stale cache from previous sessions
