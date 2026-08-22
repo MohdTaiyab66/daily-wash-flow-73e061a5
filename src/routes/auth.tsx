@@ -84,7 +84,12 @@ function AuthPage() {
       const { data: sess } = await supabase.auth.getSession();
       const user = sess.session?.user;
       const email = user?.email || "";
-      if (!email) return;
+      
+      // If no session, we stay on the login page (Step 5 fix)
+      if (!email) {
+        console.log("[AUTH-ISOLATION] No active session. Showing login UI.");
+        return;
+      }
 
       const isCurrentAdmin = email.endsWith("@admin.urbanwash.app");
       const isCurrentPartner = email.endsWith("@partner.urbanwash.app");
@@ -101,10 +106,14 @@ function AuthPage() {
         return;
       }
 
-      if (isAdminLogin && isCurrentAdmin) navigate({ to: nextRoute as any });
-      else if (!isAdminLogin && isCurrentPartner) navigate({ to: nextRoute as any });
+      // If already logged in with correct role, redirect to app/admin
+      if (isAdminLogin && isCurrentAdmin) {
+        navigate({ to: nextRoute as any, replace: true });
+      } else if (!isAdminLogin && isCurrentPartner) {
+        navigate({ to: nextRoute as any, replace: true });
+      }
     })();
-  }, [isAdminLogin, navigate, nextRoute, redirect]);
+  }, [isAdminLogin, navigate, nextRoute, redirect, signOut]);
 
   // Web OTP API — SMS auto-fill on Android Chrome
   useEffect(() => {
