@@ -37,7 +37,9 @@ function EarningsPage() {
   useRealtimeInvalidation(["services", "assignments", "partner_notifications", "wallet_ledger"], [
     ["earnings-v3"],
     ["today-assignment-for-earnings"],
-    ["today-assignment"]
+    ["today-assignment"],
+    ["partner-notifications-unread"],
+    ["history"]
   ]);
 
   const { data: todayQuery } = useQuery({
