@@ -39,6 +39,8 @@ export function useSignOut() {
           finalRedirect = "/auth?redirect=/admin";
         } else if (email.endsWith("@partner.urbanwash.app")) {
           finalRedirect = "/auth?redirect=/app";
+        } else if (email.endsWith("@customer.urbanwash.app")) {
+          finalRedirect = "/c/auth";
         } else {
           finalRedirect = "/";
         }
