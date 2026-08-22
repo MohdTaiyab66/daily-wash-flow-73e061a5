@@ -331,8 +331,7 @@ export const CUSTOMER_HEADSUP_TYPES = new Set<string>([
  * Types outside the allow-list are stamped without a send (H-2 safety net).
  */
 export async function dispatchCustomerNotifications(): Promise<number> {
-  const ts_event = Date.now();
-  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event} type=customer_notification`);
+  // Dispatch customer notifications
   const sb = await admin();
 
   const sendOfferPush = await sender();
