@@ -41,7 +41,7 @@ function PartnerRuntime() {
   // Authoritative today-assignment sync
   useTodayAssignment();
 
-  // Deep-link from push notifications (background/killed app taps) and invalidation.
+  // Service handling and invalidation logic
   useEffect(() => {
     const pending = consumePendingLink();
     if (pending) navigate({ to: pending as any });
