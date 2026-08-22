@@ -400,20 +400,42 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
  * Disconnect (sign-out). Best-effort cleanup of listeners + token row.
  */
 export async function stopFcm(userId: string | null) {
+  console.log(`[PARTNER-FCM] stopFcm triggered for user: ${userId}`);
   if (!isNative()) return;
+  
   try {
+    // 1. Remove all native listeners
     await FirebaseMessaging.removeAllListeners();
-  } catch {
-    /* noop */
+    console.log(`[PARTNER-FCM] stopFcm: native listeners removed`);
+    
+    // 2. Delete the token from Firebase (ensures a fresh one on next login)
+    await FirebaseMessaging.deleteToken();
+    console.log(`[PARTNER-FCM] stopFcm: FCM token deleted from device`);
+  } catch (err) {
+    console.warn(`[PARTNER-FCM] stopFcm cleanup error:`, err);
   }
+  
+  // 3. Invalidate in database
   if (userId) {
     const deviceId = (await Preferences.get({ key: DEVICE_ID_KEY })).value;
     if (deviceId) {
+      console.log(`[PARTNER-FCM] stopFcm: invalidating token in DB for user ${userId} / device ${deviceId}`);
       await supabase
         .from("push_tokens")
-        .update({ invalid_at: new Date().toISOString() } as any)
+        .update({ 
+          invalid_at: new Date().toISOString(),
+          token: `INVALID_${Date.now()}` // P0 FIX: Scramble the token field to prevent accidental reuse
+        } as any)
         .match({ user_id: userId, device_id: deviceId } as any);
     }
   }
+
+  // 4. Clear local cache
+  try {
+    await Preferences.remove({ key: "urbanwash.current_token" });
+    await Preferences.remove({ key: "urbanwash.last_uploaded_token" });
+  } catch { /* noop */ }
+
   started = false;
+  (window as any)._fcm_last_user = null;
 }
