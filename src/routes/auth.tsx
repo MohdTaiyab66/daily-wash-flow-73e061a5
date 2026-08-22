@@ -164,7 +164,7 @@ function AuthPage() {
       });
       if (signInErr || !signInData.session) throw new Error(signInErr?.message || "Could not sign in");
 
-      console.log("[PARTNER-AUTH:06] OTP_VERIFIED");
+      // OTP verified successfully
 
       if (!isAdminLogin) {
         const uid = signInData.session.user.id;
