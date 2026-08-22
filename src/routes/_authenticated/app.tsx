@@ -38,7 +38,7 @@ function PartnerRuntime() {
   useFcmRegistration(partner?.id ?? null, "partner");
   usePartnerRouteSync(partner?.id ?? null);
   
-  // Poll today-assignment in background
+  // Authoritative today-assignment sync
   useTodayAssignment();
 
   // Deep-link from push notifications (background/killed app taps) and invalidation.
