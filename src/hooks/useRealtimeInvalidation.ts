@@ -64,7 +64,6 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
       void import("@capacitor/app")
         .then(({ App }) => App.addListener("appStateChange", ({ isActive }) => {
           if (isActive) {
-            console.log(`[PARTNER-REALTIME] [NATIVE] App became active, refreshing`);
             refresh("NATIVE_APP_ACTIVE");
           }
         }))
