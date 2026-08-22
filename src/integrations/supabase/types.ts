@@ -7690,6 +7690,7 @@ export type Database = {
         Returns: Json
       }
       renew_assignments: { Args: never; Returns: number }
+      resolve_partner_id: { Args: { u_id: string }; Returns: string }
       respond_subscription_offer: {
         Args: { p_accept: boolean; p_offer_id: string }
         Returns: Json

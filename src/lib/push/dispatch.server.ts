@@ -155,7 +155,7 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
     if (r.vehicle_category) data.vehicle = r.vehicle_category;
 
     try {
-      // UNIVERSAL P0 FIX: Identity fragmentation resolution for Marketplace Offers.
+      // Resolve target user identity for pushes
       let targetUserId = r.partner_id;
       const { data: partner } = await sb.from("partners").select("phone").eq("id", r.partner_id).maybeSingle();
       if (partner?.phone) {
@@ -331,8 +331,7 @@ export const CUSTOMER_HEADSUP_TYPES = new Set<string>([
  * Types outside the allow-list are stamped without a send (H-2 safety net).
  */
 export async function dispatchCustomerNotifications(): Promise<number> {
-  const ts_event = Date.now();
-  console.log(`[PUSH-LATENCY:01] EVENT_CREATED ts=${ts_event} type=customer_notification`);
+  // Dispatch customer notifications
   const sb = await admin();
 
   const sendOfferPush = await sender();
@@ -345,9 +344,9 @@ export async function dispatchCustomerNotifications(): Promise<number> {
     .limit(50);
 
   let sentCount = 0;
-  console.log(`[PUSH-DISPATCH:CUSTOMER] PROCESSING rows=${(rows ?? []).length}`);
+  // Process notification queue
   for (const r of (rows ?? [])) {
-    console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
+    // Handle individual notification
     const type = String(r.type ?? "");
 
     // Canonical mapping to prevent unknown events
@@ -433,9 +432,7 @@ export async function dispatchPartnerNotifications(): Promise<number> {
     const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(mappedType);
     
     try {
-      // UNIVERSAL P0 FIX: Search for ANY valid token linked to this phone number
-      // if no tokens are found for the specific partner_id.
-      // This solves identity fragmentation where tokens are trapped on duplicate customer accounts.
+      // Identity resolution via phone number if no token found
       let targetUserId = r.partner_id;
       
       const { data: partner } = await sb.from("partners").select("phone").eq("id", r.partner_id).maybeSingle();

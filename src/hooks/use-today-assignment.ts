@@ -61,6 +61,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   const isMonday = now.getDay() === 1; // getDay() is fine for Monday check as long as we're consistent, but IST is better
 
 
+  // Resolve canonical partner identity for data fetching
   const { data: me } = await supabase
     .from("partners")
     .select("id")
@@ -202,7 +203,7 @@ export function useTodayAssignment() {
     queryFn: fetchTodayAssignment,
     staleTime: 5_000,
     refetchOnMount: "always",
-    refetchInterval: 10_000, // UNIVERSAL P0 FIX: 10-second safety refresh as authoritative net
+    refetchInterval: 10_000, // 10-second safety refresh as authoritative net
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     placeholderData: (prev) => prev ?? cachedRef.current ?? undefined,

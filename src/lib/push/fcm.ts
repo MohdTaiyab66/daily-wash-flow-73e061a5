@@ -115,50 +115,44 @@ function dispatchInAppNotification(data: Record<string, any>, notif: any) {
 export async function startFcm(userId: string, app: "partner" | "customer" = appVariant()) {
   const native = isNative();
   const platform = nativePlatform();
-  console.log(`[PARTNER-FCM] hook mounted. userId: ${userId}, app: ${app}, isNative: ${native}, platform: ${platform}`);
+  // Initialize FCM for native platform
 
   if (!native || !userId) {
-    console.log(`[PARTNER-FCM] startFcm aborted: native=${native}, userId=${!!userId}`);
+    // Skip on web or missing user
     return;
   }
   
-  // P0 UNIVERSAL: Force initialization for EVERY user on mount/login.
-  // This ensures we always have a valid token and active sync for all partners.
+  // Force initialization for user on mount/login.
   started = false; 
   (window as any)._fcm_last_user = userId;
   
-  console.log(`[PARTNER-FCM] startFcm initializing for user: ${userId}`);
-  console.log(`[PARTNER-FCM] isNative=${native}, platform=${platform}`);
-  console.log(`[PARTNER-FCM] Firebase project ID: ${app === 'partner' ? 'uw-partner-app' : 'urbanwash-customer'}`);
-  console.log(`[PARTNER-FCM] Application/package ID: ${app === 'partner' ? 'com.urbanwash.partner' : 'com.urbanwash.customer'}`);
-  console.log(`[PARTNER-FCM] Firebase Sender ID: 781422718869`);
-  console.log(`[PARTNER-FCM] auth user available: ${userId}`);
+  // Register device for push notifications
 
 
   // 1) Permission
-  console.log(`[PARTNER-FCM] notification permission check started`);
+  // Check notification permissions
   let perm;
   try {
     perm = await FirebaseMessaging.checkPermissions();
-    console.log(`[PARTNER-FCM] notification permission status: ${perm.receive}`);
+    // Permissions already granted
   } catch (e: any) {
-    console.error(`[PARTNER-FCM] checkPermissions failed: ${e?.message ?? String(e)}`);
+    // Fallback for permission check failure
     // Non-fatal, try to request anyway
   }
   
   if (!perm || perm.receive !== "granted") {
-    console.log(`[PARTNER-FCM] requesting notification permissions...`);
+    // Request permissions from user
     try {
       perm = await FirebaseMessaging.requestPermissions();
-      console.log(`[PARTNER-FCM] requestPermissions result: ${perm.receive}`);
+      // Permission request completed
     } catch (e: any) {
-      console.error(`[PARTNER-FCM] requestPermissions failed: ${e?.message ?? String(e)}`);
+      // Permission request failed
     }
   }
   
   // Note: Permission denial does NOT block token retrieval for diagnostics
   if (perm?.receive !== "granted") {
-    console.warn(`[PARTNER-FCM] permission status: ${perm?.receive || 'unknown'}`);
+    // Log missing permissions for diagnostics
   }
 
   // 2) Notification channels (Android)
@@ -198,12 +192,11 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   const deviceId = await getOrCreateDeviceId();
   const upsertToken = async (token: string) => {
     if (!token) {
-      console.error("[PARTNER-FCM] getToken failed: empty token returned");
+      // No token returned
       return;
     }
     
-    console.log(`[PARTNER-FCM] getToken succeeded. length: ${token.length}, tail: ${token.slice(-4)}`);
-    console.log(`[PARTNER-FCM] registerPushToken called for user: ${userId}`);
+    // Register token with backend
 
 
     try {
@@ -216,37 +209,37 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         await Preferences.set({ key: "urbanwash.last_token_upload_at", value: new Date().toISOString() });
         await Preferences.set({ key: "urbanwash.last_uploaded_token", value: token });
         await Preferences.set({ key: "urbanwash.last_token_upload_error", value: "" });
-        console.log(`[CUSTOMER-FCM-REGISTRATION:06] TOKEN_BACKEND_REGISTRATION_SUCCESS`);
+        // Token registration success
       } catch { /* noop */ }
     };
     const markErr = async (msg: string) => {
       try {
         await Preferences.set({ key: "urbanwash.last_token_upload_error", value: msg });
       } catch { /* noop */ }
-      console.error("[CUSTOMER-FCM-REGISTRATION:07] TOKEN_BACKEND_REGISTRATION_FAILED:", msg);
+      // Token registration failed
     };
 
     try {
       const { registerPushToken } = await import("./register-token.functions");
-      console.log(`[PARTNER-FCM] registerPushToken RPC starting...`);
+      // Using registration function
       const { data: { session } } = await supabase.auth.getSession();
       console.log(`[PARTNER-FCM] auth session present: ${!!session}`);
       
       const res = await registerPushToken({
         data: { token, platform: nativePlatform(), device_id: deviceId, app },
       });
-      console.log(`[PARTNER-FCM] registerPushToken succeeded:`, res);
+      // Registration function success
       await markOk();
       return;
 
     } catch (e: any) {
-      console.error(`[PARTNER-FCM] registerPushToken failed: ${e?.message ?? String(e)}`);
+      // Registration function failed, using fallback
       await markErr(`server: ${String(e?.message ?? e ?? "unknown")}`);
     }
 
     // Fallback (offline / server fn unreachable)
     try {
-      console.log(`[CUSTOMER-FCM-REGISTRATION] falling back to direct Supabase upsert...`);
+      // Direct Supabase fallback
       const { error } = await supabase.from("push_tokens").upsert(
         {
           user_id: userId,
@@ -260,29 +253,28 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         { onConflict: "token" } as any,
       );
       if (!error) {
-        console.log(`[CUSTOMER-FCM-REGISTRATION] direct upsert SUCCESS`);
+        // Direct upsert success
         await markOk();
       } else {
-        console.error(`[CUSTOMER-FCM-REGISTRATION] direct upsert FAILED: ${error.code} ${error.message}`);
+        // Direct upsert failed
         await markErr(`${error.code ?? ""} ${error.message ?? ""}`.trim());
       }
     } catch (e: any) {
-      console.error(`[CUSTOMER-FCM-REGISTRATION] direct upsert catch: ${e?.message ?? String(e)}`);
+      // Fallback failed
       await markErr(String(e?.message ?? e ?? "unknown"));
     }
   };
 
   try {
-    console.log(`[PARTNER-FCM] getToken started`);
+    // Initial token retrieval
     const { token } = await FirebaseMessaging.getToken();
-    console.log(`[PARTNER-FCM] getToken success = ${!!token}`);
+    // Token retrieved successfully
     if (token) {
-      console.log(`[PARTNER-FCM] token present: length=${token.length}`);
+      // Processing retrieved token
       await upsertToken(token);
     }
   } catch (e: any) {
-    console.error(`[PARTNER-FCM] getToken failed with native exception: ${e?.message ?? String(e)}`);
-    console.error(`[PARTNER-FCM] error details:`, e);
+    // Token retrieval failed
   }
 
   FirebaseMessaging.addListener("tokenReceived", async ({ token }) => {
@@ -325,13 +317,12 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
       const data = (event.notification?.data ?? {}) as Record<string, unknown>;
       const hasNotifPayload = !!(event.notification?.title || event.notification?.body);
       
-      console.log(`[CUSTOMER-FCM-ANDROID:FOREGROUND] RECEIVED messageId=${event.notification?.id} hasNotif=${hasNotifPayload}`);
+      // Foreground notification received
 
       // Dispatch Premium In-App Notification Banner
       dispatchInAppNotification(data, event.notification);
 
-      // P0 ARCHITECTURE FIX: Trigger immediate cache invalidation when a notification arrives.
-      // This is the "fast path" that complements the realtime listener.
+      // Trigger immediate cache invalidation when a notification arrives.
       const type = (data.type as string) || "default";
       if (type.includes('assignment') || type.includes('booking') || type === 'new_assignment') {
         window.dispatchEvent(new CustomEvent('urbanwash:assignment-refresh', { detail: data }));
@@ -353,7 +344,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         // further action required for the foreground case.
       }
     } catch (e) {
-      console.error("[CUSTOMER-FCM-ANDROID:FOREGROUND:ERR]", e);
+      // Error handling foreground notification
     }
   });
 
@@ -366,7 +357,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
     const data = (event.notification?.data ?? {}) as Record<string, unknown>;
     const type = (data.type as string) || "default";
     
-    // P0 ARCHITECTURE FIX: Also trigger refresh on tap to ensure we have latest state after coming from background.
+    // Trigger refresh on tap to ensure we have latest state after coming from background.
     if (type.includes('assignment') || type.includes('booking') || type === 'new_assignment') {
       window.dispatchEvent(new CustomEvent('urbanwash:assignment-refresh', { detail: data }));
     }
@@ -440,7 +431,7 @@ export async function stopFcm(userId: string | null) {
         .from("push_tokens")
         .update({ 
           invalid_at: new Date().toISOString(),
-          token: `INVALID_${Date.now()}` // P0 FIX: Scramble the token field to prevent accidental reuse
+          token: `INVALID_${Date.now()}` // Scramble the token field to prevent accidental reuse
         } as any)
         .match({ user_id: userId, device_id: deviceId } as any);
     }

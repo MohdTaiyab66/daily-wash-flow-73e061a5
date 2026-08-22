@@ -128,14 +128,14 @@ function AuthPage() {
     haptic(15);
     setLoading(true);
     try {
-      console.log("[PARTNER-AUTH:02] OTP_REQUEST_STARTED", { phone, role: isAdminLogin ? "admin" : "partner" });
+      // Requesting login OTP
       const res = await requestOtp({ data: { phone, role: isAdminLogin ? "admin" : "partner" } });
       setOtpDigits(Array(otpLength).fill(""));
-      console.log("[PARTNER-AUTH:03] OTP_SENT", { newAccount: res.newAccount });
+      // OTP sent successfully
       
       // FIX: Never skip OTP screen, even for new accounts.
       setStep("otp");
-      console.log("[PARTNER-AUTH:04] OTP_SCREEN_SHOWN");
+      // Show OTP verification screen
       
       toast.success(`Dev mode: use ${DEV_OTP}`);
       setTimeout(() => otpRefs.current[0]?.focus(), 50);
@@ -155,8 +155,7 @@ function AuthPage() {
     haptic(20);
     setLoading(true);
     try {
-      console.log("[PARTNER-AUTH:SUBMIT_OTP_CALLED]", { code });
-      console.log("[PARTNER-AUTH:05] OTP_VERIFY_STARTED", { phone, code });
+      // Verifying login OTP
       const role = isAdminLogin ? "admin" : "partner";
       const prepared = await prepareLogin({ data: { phone, otp: code, role, fullName: "" } });
       const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
@@ -165,7 +164,7 @@ function AuthPage() {
       });
       if (signInErr || !signInData.session) throw new Error(signInErr?.message || "Could not sign in");
 
-      console.log("[PARTNER-AUTH:06] OTP_VERIFIED");
+      // OTP verified successfully
 
       if (!isAdminLogin) {
         const uid = signInData.session.user.id;
@@ -173,14 +172,14 @@ function AuthPage() {
         if (!partner?.full_name) { 
           setLoading(false); 
           setStep("name"); 
-          console.log("[PARTNER-AUTH:07] PROFILE_COMPLETION_SHOWN");
+          // Show profile completion if needed
           return; 
         }
         await ensureStaffRole("partner", partner.full_name);
       } else {
         await ensureStaffRole("admin");
       }
-      console.log("[PARTNER-AUTH:09] PARTNER_HOME_OPENED");
+      // Login complete, navigating to app
       navigate({ to: nextRoute as any });
     } catch (e: any) {
       haptic([40, 40, 40]);
@@ -233,7 +232,7 @@ function AuthPage() {
     if (name.trim().length < 2) { toast.error("Enter your full name"); return; }
     setLoading(true);
     const role = isAdminLogin ? "admin" : "partner";
-    console.log("[PARTNER-AUTH:08] PROFILE_SUBMITTED", { name: name.trim() });
+    // Completing profile registration
 
     try {
       const { data: current } = await supabase.auth.getSession();
@@ -246,7 +245,7 @@ function AuthPage() {
 
       await supabase.auth.updateUser({ data: { full_name: name.trim(), phone, role } });
       await ensureStaffRole(role as "admin" | "partner", name.trim());
-      console.log("[PARTNER-AUTH:09] PARTNER_HOME_OPENED");
+      // Navigation after profile completion
       navigate({ to: nextRoute as any });
     } catch (e: any) {
       toast.error(e?.message || "Could not complete sign in");

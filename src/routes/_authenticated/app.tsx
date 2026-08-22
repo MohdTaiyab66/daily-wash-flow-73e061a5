@@ -38,17 +38,16 @@ function PartnerRuntime() {
   useFcmRegistration(partner?.id ?? null, "partner");
   usePartnerRouteSync(partner?.id ?? null);
   
-  // UNIVERSAL P0 FIX: Keep today-assignment polling active in background
-  // while the Partner App is authenticated, ensuring Home/Route always sync.
+  // Authoritative today-assignment sync
   useTodayAssignment();
 
-  // Deep-link from push notifications (background/killed app taps) and invalidation.
+  // Service handling and invalidation logic
   useEffect(() => {
     const pending = consumePendingLink();
     if (pending) navigate({ to: pending as any });
 
     const invalidateAll = () => {
-      console.log("[PARTNER-RUNTIME] Triggering exhaustive invalidation from FCM/DeepLink");
+      // Sync data state from push events
       qc.invalidateQueries({ queryKey: ["today-assignment"] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
@@ -110,7 +109,8 @@ function TopBar() {
     (async () => {
       const { data: u, error } = await supabase.auth.getUser();
       if (error || !u.user || cancelled) return;
-      
+
+      // Resolve canonical partner identity for realtime sync
       const { data: me } = await supabase
         .from("partners")
         .select("id")
@@ -126,8 +126,7 @@ function TopBar() {
             const notif = payload.new as any;
             qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
             
-            // UNIVERSAL P0 FIX: Exhaustive invalidation for all possible assignment events.
-            // This ensures Home, Route, and Earnings are always up-to-date after an Admin assignment.
+            // Trigger invalidation on assignment events.
             if (
               notif?.type === "new_assignment" || 
               notif?.type === "assignment_new" || 

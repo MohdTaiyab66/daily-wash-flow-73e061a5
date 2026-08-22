@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { isNative } from "@/lib/platform";
 
 /**
- * Generic realtime invalidation hook with forensic logging.
+ * Generic realtime invalidation hook.
  */
 export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<readonly unknown[]>) {
   const queryClient = useQueryClient();
@@ -14,32 +14,32 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
   useEffect(() => {
     if (tables.length === 0) return;
     
-    console.log(`[PARTNER-REALTIME] [useRealtimeInvalidation] Mounting for tables: ${tableKey}`);
+    // Set up realtime channel for tables
     
     const channel = supabase.channel(`realtime-inv-${Math.random().toString(36).slice(2, 8)}`);
     
     const refresh = (source: string) => {
-      console.log(`[PARTNER-REALTIME] [SYNC] Invalidation triggered from ${source}`);
+      // Invalidation triggered
       if (queryKeys?.length) {
         queryKeys.forEach((key) => {
-          console.log(`[PARTNER-REALTIME] [SYNC] Invalidating key:`, key);
+          // Invalidating key
           queryClient.invalidateQueries({ queryKey: key as any });
         });
       } else {
-        console.log(`[PARTNER-REALTIME] [SYNC] Invalidating ALL queries`);
+        // Invalidating all queries
         queryClient.invalidateQueries();
       }
     };
 
     tables.forEach((table) => {
       channel.on("postgres_changes", { event: "*", schema: "public", table }, (payload) => {
-        console.log(`[PARTNER-REALTIME] [EVENT] Change in ${table}: ${payload.eventType}`, payload);
+        // Handle change event
         refresh(`DB_${table}_${payload.eventType}`);
       });
     });
 
     channel.subscribe((status) => {
-      console.log(`[PARTNER-REALTIME] [STATUS] Channel status for [${tableKey}]: ${status}`);
+      // Handle status change
       if (status === "SUBSCRIBED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
         // Initial refresh to ensure sync
         refresh(`CHANNEL_${status}`);
@@ -48,13 +48,11 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
 
     const onVisible = () => {
       if (document.visibilityState === "visible") {
-        console.log(`[PARTNER-REALTIME] [WINDOW] Visibility change, refreshing`);
         refresh("VISIBILITY_CHANGE");
       }
     };
     
     const onOnline = () => {
-      console.log(`[PARTNER-REALTIME] [NETWORK] Back online, refreshing`);
       refresh("NETWORK_ONLINE");
     };
     
@@ -66,7 +64,6 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
       void import("@capacitor/app")
         .then(({ App }) => App.addListener("appStateChange", ({ isActive }) => {
           if (isActive) {
-            console.log(`[PARTNER-REALTIME] [NATIVE] App became active, refreshing`);
             refresh("NATIVE_APP_ACTIVE");
           }
         }))
@@ -75,7 +72,7 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
     }
 
     return () => {
-      console.log(`[PARTNER-REALTIME] [useRealtimeInvalidation] Unmounting listener for: ${tableKey}`);
+      // Clean up listener
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("online", onOnline);
       void nativeListener?.remove();

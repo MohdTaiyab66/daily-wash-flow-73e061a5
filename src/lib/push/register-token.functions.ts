@@ -47,10 +47,10 @@ export const registerPushToken = createServerFn({ method: "POST" })
 
     // 1) Token is globally unique — conflict on it so an existing row is moved
     //    to the current user/device instead of throwing 23505.
-    //    Universal: This works for all partners (Trial, Real, Future).
+    // Register token for partner identity
     const { error: tokenErr } = await sb.from("push_tokens").upsert(row, { onConflict: "token" });
     if (tokenErr) {
-      console.warn(`[PARTNER-LIFECYCLE:SERVER] Conflict on token, attempting update by device_id: ${tokenErr.message}`);
+      // Handle token conflict with device ID fallback
       // Fallback: the (user_id, device_id, app) row exists with a different
       // token — update it in place.
       const { error: devErr } = await sb
@@ -68,7 +68,7 @@ export const registerPushToken = createServerFn({ method: "POST" })
       .neq("token", data.token);
 
     const { data: currentTokens } = await sb.from("push_tokens").select("id").eq("user_id", userId).is("invalid_at", null);
-    console.log(`[PARTNER-FCM] active token count after upsert = ${currentTokens?.length || 0}`);
+    // Return registration status
 
     return { ok: true as const, user_id: userId };
 

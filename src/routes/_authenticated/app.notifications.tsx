@@ -28,8 +28,6 @@ function NotificationsPage() {
   const navigate = useNavigate();
   
   // Realtime invalidation for the notifications page
-  // Note: There is also a manual useEffect listener below for fine-grained control,
-  // but useRealtimeInvalidation provides a robust fallback and forensic logging.
   useRealtimeInvalidation(["partner_notifications"], [
     ["partner-notifications"],
     ["partner-notifications-unread"]
