@@ -317,7 +317,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
       const data = (event.notification?.data ?? {}) as Record<string, unknown>;
       const hasNotifPayload = !!(event.notification?.title || event.notification?.body);
       
-      console.log(`[CUSTOMER-FCM-ANDROID:FOREGROUND] RECEIVED messageId=${event.notification?.id} hasNotif=${hasNotifPayload}`);
+      // Foreground notification received
 
       // Dispatch Premium In-App Notification Banner
       dispatchInAppNotification(data, event.notification);
