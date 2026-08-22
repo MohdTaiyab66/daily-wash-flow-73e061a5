@@ -84,7 +84,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     const { data: loose, error: lErr } = await supabase
       .from("services")
       .select("id,customer_id,vehicle_id,status,started_at,completed_at,rate_per_car,scheduled_date")
-      .eq("partner_id", u.user.id)
+      .eq("partner_id", partnerId)
       .eq("scheduled_date", today);
     if (lErr) throw lErr;
     // Same filter the Live Route screen uses — bookings covered elsewhere are
