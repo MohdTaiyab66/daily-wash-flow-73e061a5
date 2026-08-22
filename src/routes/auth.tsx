@@ -232,7 +232,7 @@ function AuthPage() {
     if (name.trim().length < 2) { toast.error("Enter your full name"); return; }
     setLoading(true);
     const role = isAdminLogin ? "admin" : "partner";
-    console.log("[PARTNER-AUTH:08] PROFILE_SUBMITTED", { name: name.trim() });
+    // Completing profile registration
 
     try {
       const { data: current } = await supabase.auth.getSession();
