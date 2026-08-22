@@ -121,383 +121,69 @@ function LandingPage() {
           {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            P0 — FIX THE ACTUAL ROOT CAUSE: UTC vs IST SERVICE DATE
+                                            P0 — FINAL UTC/IST DATE FIX REAL TEST
 
-The forensic audit has identified the exact first divergence.
+Do NOT modify code unless this test fails.
 
-DO NOT modify:
+Do NOT update src/routes/index.tsx.
 
-- FCM
+Do NOT touch FCM yet.
 
-- push notifications
+The UTC/IST business-date fix is now implemented.
 
-- notification UI
+Current expected business date:
 
-- landing page
+23 August 2026 (IST)
 
-- identity architecture
-
-- Partner notification logic
-
-The actual problem is DATE STORAGE.
+Perform ONE fresh real test now while the time is approximately 04:15 IST.
 
 ==================================================
 
-ROOT CAUSE
+1. CREATE FRESH BOOKING
 
 ==================================================
 
-Admin assignment RPC:
+Create a NEW paid Daily Shine booking.
 
-admin_assign_partner_to_booking
+Record:
 
-uses database CURRENT_DATE / server UTC.
+booking_id
 
-Partner App uses:
+service_id
 
-getTodayIST()
-
-Therefore during:
-
-00:00 IST → 05:30 IST
-
-the database and app can disagree about the current service date.
-
-Example:
-
-04:00 AM IST on 23 Aug
-
-Backend CURRENT_DATE:
-
-22 Aug
-
-Partner App IST date:
-
-23 Aug
-
-Result:
-
-assignment is created for 22 Aug
-
-BUT Partner App queries 23 Aug
-
-Therefore:
-
-Home = 0
-
-Daily Route = 0
-
-Earnings = 0
-
-10-second refresh = 0
-
-while the assignment and notification exist in DB.
+subscription_id
 
 ==================================================
 
-1. ONE AUTHORITATIVE TIMEZONE
+2. ASSIGN NON-DEEPAK PARTNER
 
 ==================================================
 
-Urban Wash operational service dates must use:
+Use a non-Deepak partner.
 
-Asia/Kolkata
+Admin:
 
-IST
+→ open booking
 
-UTC+05:30
+→ select partner
 
-for:
-
-Daily Shine service date
-
-scheduled_date
-
-today's assignments
-
-Daily Route
-
-Home counts
-
-Daily Potential
-
-Earnings calculations
-
-service history date logic
-
-assignment date
-
-renewal/service-day calculations where operational date is required
+→ ASSIGN PARTNER
 
 ==================================================
 
-2. FIX THE ADMIN ASSIGNMENT RPC
+3. DATABASE DATE PROOF
 
 ==================================================
 
-Inspect:
+Immediately inspect the created assignment/service.
 
-admin_assign_partner_to_booking
+Report:
 
-Remove any use of:
-
-CURRENT_DATE
-
-CURRENT_DATE without timezone conversion
-
-server-local date
-
-for operational service date.
-
-Compute the service date explicitly in IST.
-
-Conceptually:
-
-current_timestamp AT TIME ZONE 'Asia/Kolkata'
-
-Then derive the calendar date from that value.
-
-The exact SQL must use the actual PostgreSQL schema/type.
-
-==================================================
-
-3. DO NOT STORE UTC DATE AS scheduled_date
-
-==================================================
-
-If:
-
-scheduled_date
-
-is a DATE representing the business/service day:
-
-it MUST contain the IST business date.
-
-Example:
-
-At 04:00 IST on Aug 23:
-
-scheduled_date = 2026-08-23
-
-NOT:
-
-2026-08-22
-
-==================================================
-
-4. CHECK ALL OTHER SERVICE-CREATION PATHS
-
-==================================================
-
-Search the entire backend for:
-
-CURRENT_DATE
-
-CURRENT_TIMESTAMP
-
-NOW()
-
-new Date()
-
-toISOString()
-
-scheduled_date
-
-service_date
-
-Especially inspect:
-
-booking creation
-
-Daily Shine activation
-
-assignment
-
-service generation
-
-subscription renewal
-
-cron jobs
-
-reminders
-
-marketplace
-
-reconciliation
-
-service creation
-
-Any code determining a BUSINESS CALENDAR DATE must use IST.
-
-Do NOT blindly convert all timestamps to IST.
-
-Actual event timestamps can remain UTC.
-
-The distinction is:
-
-EVENT TIMESTAMP:
-
-can remain UTC
-
-BUSINESS SERVICE DATE:
-
-must be IST
-
-==================================================
-
-5. FIX EXISTING INCORRECTLY DATED TEST DATA
-
-==================================================
-
-For the CURRENT test records that were created with the wrong date:
-
-identify affected records.
-
-Only correct records where:
-
-server UTC date != intended IST business date
-
-Do NOT rewrite historical completed services blindly.
-
-For current/future pending assignments, correct them to the proper IST date.
-
-==================================================
-
-6. PARTNER APP QUERY
-
-==================================================
-
-Keep the Partner App's:
-
-getTodayIST()
-
-logic.
-
-Do NOT weaken the query to:
-
-today OR yesterday
-
-Do NOT add arbitrary date fallbacks.
-
-The goal is:
-
-Backend scheduled_date = IST date
-
-Partner App scheduled_date = IST date
-
-Both must match.
-
-==================================================
-
-7. DAILY ROUTE
-
-==================================================
-
-Daily Route must use the same IST business date.
-
-At:
-
-04:00 IST Aug 23
-
-a fresh assignment must appear under:
-
-Aug 23
-
-==================================================
-
-8. HOME
-
-==================================================
-
-Home must now immediately include the fresh assignment in:
-
-TOTAL CUSTOMERS
-
-DAILY POTENTIAL
-
-assignment count
-
-But:
-
-DONE
-
-UNAVAILABLE
-
-NEED WASH
-
-must remain unchanged until those outcomes actually occur.
-
-==================================================
-
-9. EARNINGS
-
-==================================================
-
-Assignment increases:
-
-Daily Potential / expected assignment earning
-
-Completion increases:
-
-Today's Earned
-
-The service must not become "earned" merely because it was assigned.
-
-==================================================
-
-10. 10-SECOND REFRESH
-
-==================================================
-
-After the date fix, verify:
-
-Admin assignment
-
-→ assignment date = IST today
-
-→ useTodayAssignment query = IST today
-
-→ row returned
-
-→ Home/Route/Earnings update
-
-The 10-second safety refresh should now return the assignment.
-
-==================================================
-
-11. REALTIME
-
-==================================================
-
-Keep existing Realtime behavior.
-
-Notification can trigger invalidation.
-
-But the underlying assignment date must already be correct.
-
-==================================================
-
-12. FRESH REAL-DEVICE TEST
-
-==================================================
-
-IMPORTANT:
-
-Run the test during the affected window:
-
-between 00:00 IST and 05:30 IST.
-
-Create a NEW Daily Shine booking.
-
-Admin assigns the booking.
-
-Print:
-
-Current UTC timestamp:
+UTC timestamp:
 
 ____
 
-Current IST timestamp:
+IST timestamp:
 
 ____
 
@@ -509,111 +195,157 @@ stored scheduled_date:
 
 ____
 
-Partner App getTodayIST:
+Expected:
 
-____
+IST business date = stored scheduled_date
 
-These MUST agree on the calendar date.
+For this test:
 
-==================================================
-
-13. FINAL TEST
+2026-08-23 = 2026-08-23
 
 ==================================================
 
-Admin assigns a NON-DEEPAK partner at approximately the current IST time.
-
-Expected immediately:
-
-✓ assignment DB record
-
-✓ scheduled_date = today's IST date
-
-✓ Partner App assignment visible
-
-✓ Home customer count updated
-
-✓ Daily Potential updated
-
-✓ Daily Route updated
-
-✓ Map updated
-
-✓ Earnings potential updated
-
-✓ in-app notification
-
-✓ 10-second refresh still shows assignment
-
-FCM remains a separate later test.
+4. PARTNER APP
 
 ==================================================
 
-14. REQUIRED FORENSIC REPORT
+Without manual refresh verify:
+
+✓ assignment appears
+
+✓ Home customer count increases
+
+✓ Daily Potential increases
+
+✓ Daily Route shows customer
+
+✓ vehicle appears
+
+✓ map updates
+
+✓ assignment/Available state updates
+
+✓ in-app notification appears
+
+DONE must NOT increase yet.
+
+Today's Earned must NOT increase merely from assignment.
 
 ==================================================
 
-Return:
-
-Current UTC:
-
-____
-
-Current IST:
-
-____
-
-Admin RPC stored scheduled_date:
-
-____
-
-Partner App queried date:
-
-____
-
-Before fix:
-
-____
-
-After fix:
-
-____
-
-Affected database functions/queries:
-
-____
-
-Any current records corrected:
-
-____
+5. 10-SECOND SAFETY REFRESH
 
 ==================================================
 
-FINAL ACCEPTANCE
+Wait for the automatic refresh.
 
-There must be ONE business-calendar definition:
+Verify the assignment remains visible.
 
-URBAN WASH SERVICE DATE = IST (Asia/Kolkata)
+It must NOT disappear after refetch.
 
-All current and future Daily Shine assignments must use this rule.
+==================================================
 
-No UTC/IST date mismatch.
+6. DATABASE QUERY PROOF
 
-No today/yesterday hacks.
+==================================================
 
-No date fallback logic.
+Verify:
 
-At 04:00 IST on Aug 23:
+get_partner_work
 
-Admin assignment
+returns the fresh assignment for:
 
-→ scheduled_date = Aug 23
+canonical partners.id
 
-→ Partner query date = Aug 23
+AND
 
-→ assignment visible
+scheduled_date = 2026-08-23
 
-→ Home/Route/Earnings update.`}
+==================================================
+
+7. SECOND NON-DEEPAK TEST
+
+==================================================
+
+Repeat with a different non-Deepak partner.
+
+This confirms the date fix is universal and not account-specific.
+
+==================================================
+
+8. NO YESTERDAY FALLBACK
+
+==================================================
+
+Confirm the Partner App is NOT finding the service by querying both today and
+
+yesterday.
+
+The correct result must come from:
+
+IST business date = stored scheduled_date
+
+==================================================
+
+FINAL REPORT
+
+Booking:
+
+____
+
+Assignment:
+
+____
+
+Partner:
+
+____
+
+UTC:
+
+____
+
+IST:
+
+____
+
+Stored scheduled_date:
+
+____
+
+get_partner_work returned row:
+
+PASS/FAIL
+
+Home:
+
+PASS/FAIL
+
+Daily Route:
+
+PASS/FAIL
+
+Map:
+
+PASS/FAIL
+
+Daily Potential:
+
+PASS/FAIL
+
+In-app notification:
+
+PASS/FAIL
+
+10-second refresh:
+
+PASS/FAIL
+
+If anything fails, identify the FIRST divergence.
+
+Do not make another generic architecture change until the exact failure is
+
+identified.`}
         </div>
       </div>
     </div>
