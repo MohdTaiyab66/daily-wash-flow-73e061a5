@@ -7,7 +7,7 @@ export function useSignOut() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const signOut = async (redirectTo: string = "/") => {
+  const signOut = async (redirectTo?: string) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id || null;
@@ -31,15 +31,22 @@ export function useSignOut() {
       queryClient.clear();
 
       // 4. Force reload to ensure all stores and listeners are reset
-      if (redirectTo.startsWith("http")) {
-        window.location.href = redirectTo;
-      } else {
-        // Using window.location.href instead of navigate for a cleaner slate
-        window.location.href = redirectTo;
+      let finalRedirect = redirectTo;
+      if (!finalRedirect) {
+        // Determine redirect destination based on identity
+        const email = session?.user?.email || "";
+        if (email.endsWith("@admin.urbanwash.app")) {
+          finalRedirect = "/auth?redirect=/admin";
+        } else if (email.endsWith("@partner.urbanwash.app")) {
+          finalRedirect = "/auth?redirect=/app";
+        } else {
+          finalRedirect = "/";
+        }
       }
+
+      window.location.href = finalRedirect;
     } catch (error) {
       console.error("Logout error:", error);
-      // Fallback
       window.location.href = "/";
     }
   };
