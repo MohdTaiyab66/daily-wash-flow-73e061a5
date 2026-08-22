@@ -253,7 +253,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         { onConflict: "token" } as any,
       );
       if (!error) {
-        console.log(`[CUSTOMER-FCM-REGISTRATION] direct upsert SUCCESS`);
+        // Direct upsert success
         await markOk();
       } else {
         console.error(`[CUSTOMER-FCM-REGISTRATION] direct upsert FAILED: ${error.code} ${error.message}`);
