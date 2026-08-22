@@ -74,14 +74,14 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   }
 
   // AUTHORITATIVE PARTNER WORK SOURCE: Fetch all assigned work for today via RPC
-  const { data: work, error: workErr } = await supabase.rpc("get_partner_work", { p_partner_id: partnerId });
+  const { data: work, error: workErr } = await (supabase.rpc as any)("get_partner_work", { p_partner_id: partnerId });
   if (workErr) throw workErr;
 
   const todayStr = getTodayIST();
   const isMonday = new Date().getDay() === 1;
 
   // Map RPC results to expected UI shape
-  const today = (work ?? []).map((w: any) => ({
+  const today = ((work as any[]) ?? []).map((w: any) => ({
     id: w.service_id,
     assignment_id: w.assignment_id,
     status: w.service_status,
