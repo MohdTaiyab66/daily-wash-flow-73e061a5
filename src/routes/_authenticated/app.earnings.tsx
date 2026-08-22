@@ -195,7 +195,7 @@ function EarningsPage() {
 
       {todayQuery && (
         <section className="space-y-4">
-          <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Active Assignment</h2>
+          <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Assignment Info</h2>
           <Card className="p-6 border-none shadow-xl bg-[#1A1A1A] text-white rounded-[32px] relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF6B00]/10 rounded-full blur-3xl -mr-16 -mt-16" />
             <div className="space-y-5 relative z-10">
