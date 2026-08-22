@@ -130,7 +130,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
 
 
   // 1) Permission
-  console.log(`[PARTNER-FCM] notification permission check started`);
+  // Check notification permissions
   let perm;
   try {
     perm = await FirebaseMessaging.checkPermissions();
