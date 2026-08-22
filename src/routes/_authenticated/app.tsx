@@ -32,6 +32,8 @@ function AppLayout() {
 function PartnerRuntime() {
   const { data: partner } = usePartner();
   const navigate = useNavigate();
+  const qc = useQueryClient();
+
   usePartnerHeartbeat(partner?.id);
   useFcmRegistration(partner?.id ?? null, "partner");
   usePartnerRouteSync(partner?.id ?? null);
@@ -40,17 +42,41 @@ function PartnerRuntime() {
   // while the Partner App is authenticated, ensuring Home/Route always sync.
   useTodayAssignment();
 
-  // Deep-link from push notifications (background/killed app taps).
+  // Deep-link from push notifications (background/killed app taps) and invalidation.
   useEffect(() => {
     const pending = consumePendingLink();
     if (pending) navigate({ to: pending as any });
+
+    const invalidateAll = () => {
+      console.log("[PARTNER-RUNTIME] Triggering exhaustive invalidation from FCM/DeepLink");
+      qc.invalidateQueries({ queryKey: ["today-assignment"] });
+      qc.invalidateQueries({ queryKey: ["route-today"] });
+      qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
+      qc.invalidateQueries({ queryKey: ["partner-services"] });
+      qc.invalidateQueries({ queryKey: ["partner-earnings"] });
+      qc.invalidateQueries({ queryKey: ["partner-open-offers-home"] });
+      qc.invalidateQueries({ queryKey: ["partner-booking-requests"] });
+      qc.invalidateQueries({ queryKey: ["history"] });
+    };
+
     const onLink = (e: Event) => {
       const link = (e as CustomEvent).detail?.link;
       if (typeof link === "string" && link.startsWith("/")) navigate({ to: link as any });
+      invalidateAll();
     };
+
+    const onRefresh = () => {
+      invalidateAll();
+    };
+
     window.addEventListener("urbanwash:deeplink", onLink);
-    return () => window.removeEventListener("urbanwash:deeplink", onLink);
-  }, [navigate]);
+    window.addEventListener("urbanwash:assignment-refresh", onRefresh);
+    return () => {
+      window.removeEventListener("urbanwash:deeplink", onLink);
+      window.removeEventListener("urbanwash:assignment-refresh", onRefresh);
+    };
+  }, [navigate, qc]);
+
 
   return (
     <>
