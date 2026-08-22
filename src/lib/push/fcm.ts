@@ -274,8 +274,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
       await upsertToken(token);
     }
   } catch (e: any) {
-    console.error(`[PARTNER-FCM] getToken failed with native exception: ${e?.message ?? String(e)}`);
-    console.error(`[PARTNER-FCM] error details:`, e);
+    // Token retrieval failed
   }
 
   FirebaseMessaging.addListener("tokenReceived", async ({ token }) => {
