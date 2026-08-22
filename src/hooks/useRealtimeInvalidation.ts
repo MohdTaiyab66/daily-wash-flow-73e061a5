@@ -26,7 +26,7 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
           queryClient.invalidateQueries({ queryKey: key as any });
         });
       } else {
-        console.log(`[PARTNER-REALTIME] [SYNC] Invalidating ALL queries`);
+        // Invalidating all queries
         queryClient.invalidateQueries();
       }
     };
