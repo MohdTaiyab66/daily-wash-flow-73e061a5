@@ -175,8 +175,17 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   };
 }
 
+export type TodayAssignmentMetrics = {
+  successes: number;
+  failures: number;
+  retryAttempts: number;
+  lastError: string | null;
+  lastSuccessAt: number | null;
+  successRate: number; // 0..1
+};
+
 export function useTodayAssignment() {
-  const [metrics, setMetrics] = useState({
+  const [metrics, setMetrics] = useState<TodayAssignmentMetrics>({
     successes: 0, failures: 0, retryAttempts: 0,
     lastError: null, lastSuccessAt: null, successRate: 1,
   });
