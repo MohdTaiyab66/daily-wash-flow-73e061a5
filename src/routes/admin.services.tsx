@@ -71,7 +71,7 @@ function BookingsPage() {
           <button
             key={tab.id}
             type="button"
-            onClick={() => navigate({ search: { f: tab.id } })}
+            onClick={() => navigate({ search: { f: tab.id } } as any)}
             className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
               filter === tab.id
                 ? "border-primary bg-primary/12 text-primary"
