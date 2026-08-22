@@ -35,6 +35,10 @@ export function useSignOut() {
 
       // 5. Clear all cached queries to prevent data contamination
       queryClient.clear();
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("uw:today-assignment:last-success-v2");
+        window.localStorage.removeItem("uw:today-assignment:last-success");
+      }
 
       // 6. Force reload to ensure all stores and listeners are reset
       let finalRedirect = redirectTo;

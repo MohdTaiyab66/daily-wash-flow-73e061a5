@@ -61,18 +61,17 @@ function PartnerRuntime() {
   useEffect(() => {
     const pending = consumePendingLink();
     if (pending) navigate({ to: pending as any });
-
     const invalidateAll = () => {
-      // Sync data state from push events
-      qc.invalidateQueries({ queryKey: ["today-assignment"] });
-      qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
-      qc.invalidateQueries({ queryKey: ["partner-services"] });
       qc.invalidateQueries({ queryKey: ["partner-earnings"] });
       qc.invalidateQueries({ queryKey: ["partner-open-offers-home"] });
       qc.invalidateQueries({ queryKey: ["partner-booking-requests"] });
       qc.invalidateQueries({ queryKey: ["history"] });
+      
+      // Authoritative today-assignment invalidate
+      qc.invalidateQueries({ queryKey: ["today-assignment"] });
     };
+
 
     const onLink = (e: Event) => {
       const link = (e as CustomEvent).detail?.link;
@@ -110,10 +109,14 @@ function TopBar() {
     queryFn: async () => {
       const { data: u, error: userError } = await supabase.auth.getUser();
       if (userError || !u.user) return 0;
+      
+      const { data: partnerId } = await supabase.rpc("resolve_partner_id", { u_id: u.user.id } as any);
+      if (!partnerId) return 0;
+
       const { count } = await supabase
         .from("partner_notifications")
         .select("id", { count: "exact", head: true })
-        .eq("partner_id", u.user.id)
+        .eq("partner_id", partnerId)
         .is("read_at", null);
       return count ?? 0;
     },
@@ -126,14 +129,8 @@ function TopBar() {
       const { data: u, error } = await supabase.auth.getUser();
       if (error || !u.user || cancelled) return;
 
-      // Resolve canonical partner identity for realtime sync
-      const { data: me } = await supabase
-        .from("partners")
-        .select("id")
-        .or(`id.eq.${u.user.id},phone.eq.${u.user.phone?.replace('91', '') || 'NONE'},email.eq.${u.user.email}`)
-        .maybeSingle();
-
-      const partnerId = me?.id || u.user.id;
+      const { data: partnerId } = await supabase.rpc("resolve_partner_id", { u_id: u.user.id } as any);
+      if (!partnerId || cancelled) return;
 
       (window as any)._supabase_partner_channel = channel = supabase
         .channel(`partner-notif-${partnerId}`)

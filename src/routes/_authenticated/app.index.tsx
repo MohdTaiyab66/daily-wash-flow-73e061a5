@@ -125,6 +125,7 @@ function HomePage() {
   const total = todayData?.assignmentTotalCustomers || 0;
   const remaining = todayData?.remainingToday ?? 0;
 
+
   const earnedSoFar = todayData?.actualEarnedToday ?? 0;
 
   const potentialDailyEarnings = todayData?.potentialDailyEarnings ?? 0;
