@@ -1,51 +1,53 @@
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { getTodayIST } from "@/lib/date-utils";
+import { createFileRoute } from '@tanstack/react-router';
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Car, Shield, Smartphone, Zap, CheckCircle2, Navigation, Clock, MapPin, IndianRupee } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { MapPin, Shield, Star, Clock, Sparkles, CheckCircle2 } from "lucide-react";
 
-export const Route = () => {
+export const Route = createFileRoute('/')({
+  component: LandingPage,
+});
+
+function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="border-b bg-white/50 backdrop-blur-md sticky top-0 z-50">
+      <nav className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Car className="w-5 h-5 text-primary-foreground" />
+              <Sparkles className="text-white w-5 h-5" />
             </div>
-            <span className="font-bold text-xl tracking-tight">Urban Wash</span>
+            <span className="font-bold text-xl tracking-tight">URBAN WASH</span>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" asChild>
-              <Link to="/auth">Login</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/auth">Get Started</Link>
-            </Button>
+            <Link to="/auth">
+              <Button variant="ghost">Partner Login</Button>
+            </Link>
+            <Button>Download App</Button>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
       <main>
-        <section className="py-20 px-4">
-          <div className="container mx-auto text-center max-w-3xl">
-            <h1 className="text-5xl md:text-6xl font-black tracking-tighter mb-6 bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Premium Car Care, <br />Right at Your Doorstep
+        {/* Hero Section */}
+        <section className="py-20 lg:py-32 container mx-auto px-4">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+              <Star className="w-4 h-4 fill-current" />
+              <span>Premium Doorstep Car Wash in Kanpur</span>
+            </div>
+            <h1 className="text-5xl lg:text-7xl font-bold tracking-tight mb-6 leading-tight">
+              Your car deserves a <span className="text-primary">Daily Shine.</span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-10 leading-relaxed">
-              Experience the future of car washing. Professional detailing, sustainable practices, and convenience redefined.
+            <p className="text-xl text-muted-foreground mb-10 leading-relaxed max-w-2xl">
+              Professional, eco-friendly car cleaning service delivered at your doorstep every morning. Join thousands of happy car owners in Kanpur.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="h-14 px-8 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20" asChild>
-                <Link to="/auth">Book a Wash</Link>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button size="lg" className="h-14 px-8 text-lg font-semibold">
+                Start 7-Day Free Trial
               </Button>
-              <Button size="lg" variant="outline" className="h-14 px-8 rounded-2xl text-lg font-bold" asChild>
-                <Link to="/auth">Become a Partner</Link>
+              <Button size="lg" variant="outline" className="h-14 px-8 text-lg font-semibold">
+                View Pricing
               </Button>
             </div>
           </div>
@@ -54,29 +56,44 @@ export const Route = () => {
         {/* Features Grid */}
         <section className="py-20 bg-muted/30">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Card className="p-8 border-none bg-white/50 backdrop-blur-sm shadow-sm rounded-3xl">
-                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
-                  <Shield className="w-6 h-6 text-primary" />
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                {
+                  icon: Clock,
+                  title: "Early Morning Service",
+                  description: "We clean your car before you head out for work, every single day."
+                },
+                {
+                  icon: Shield,
+                  title: "Verified Professionals",
+                  description: "Our partners are background-checked and professionally trained."
+                },
+                {
+                  icon: MapPin,
+                  title: "Real-time Tracking",
+                  description: "Track your wash status and get photos of every completed service."
+                }
+              ].map((feature, i) => (
+                <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border">
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
+                    <feature.icon className="text-primary w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
+                  <p className="text-muted-foreground">{feature.description}</p>
                 </div>
-                <h3 className="text-xl font-bold mb-3">Trusted Quality</h3>
-                <p className="text-muted-foreground">Certified professionals using premium products for your vehicle's safety.</p>
-              </Card>
-              <Card className="p-8 border-none bg-white/50 backdrop-blur-sm shadow-sm rounded-3xl">
-                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
-                  <Smartphone className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Seamless App</h3>
-                <p className="text-muted-foreground">Manage bookings, track real-time updates, and pay securely from your phone.</p>
-              </Card>
-              <Card className="p-8 border-none bg-white/50 backdrop-blur-sm shadow-sm rounded-3xl">
-                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
-                  <Zap className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Fast & Efficient</h3>
-                <p className="text-muted-foreground">Time-saving service that fits your schedule without compromising quality.</p>
-              </Card>
+              ))}
             </div>
+          </div>
+        </section>
+
+        {/* Social Proof */}
+        <section className="py-20 container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-12">Trusted by Kanpur's best neighborhoods</h2>
+          <div className="flex flex-wrap justify-center gap-8 opacity-50 grayscale">
+            <div className="text-xl font-bold">Kalyanpur</div>
+            <div className="text-xl font-bold">Indira Nagar</div>
+            <div className="text-xl font-bold">Awas Vikas</div>
+            <div className="text-xl font-bold">Sharda Nagar</div>
           </div>
         </section>
       </main>
