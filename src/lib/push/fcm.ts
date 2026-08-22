@@ -233,7 +233,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
       return;
 
     } catch (e: any) {
-      console.error(`[PARTNER-FCM] registerPushToken failed: ${e?.message ?? String(e)}`);
+      // Registration function failed, using fallback
       await markErr(`server: ${String(e?.message ?? e ?? "unknown")}`);
     }
 
