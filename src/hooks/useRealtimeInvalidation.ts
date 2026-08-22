@@ -19,7 +19,7 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
     const channel = supabase.channel(`realtime-inv-${Math.random().toString(36).slice(2, 8)}`);
     
     const refresh = (source: string) => {
-      console.log(`[PARTNER-REALTIME] [SYNC] Invalidation triggered from ${source}`);
+      // Invalidation triggered
       if (queryKeys?.length) {
         queryKeys.forEach((key) => {
           console.log(`[PARTNER-REALTIME] [SYNC] Invalidating key:`, key);
