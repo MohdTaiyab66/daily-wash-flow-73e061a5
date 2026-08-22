@@ -135,7 +135,7 @@ function AuthPage() {
       
       // FIX: Never skip OTP screen, even for new accounts.
       setStep("otp");
-      console.log("[PARTNER-AUTH:04] OTP_SCREEN_SHOWN");
+      // Show OTP verification screen
       
       toast.success(`Dev mode: use ${DEV_OTP}`);
       setTimeout(() => otpRefs.current[0]?.focus(), 50);
