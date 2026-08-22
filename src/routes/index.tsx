@@ -105,293 +105,40 @@ function LandingPage() {
             {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            P0 FINAL — IDENTITY RESOLUTION + MULTI-PARTNER E2E VALIDATION
-
-Do NOT modify the UI or landing page.
-
-The latest implementation claims the root cause was identity fragmentation:
-
-multiple user IDs associated with the same phone/account.
-
-It also claims:
-
-- phone-based recovery is implemented
-
-- partner dispatch uses the correct active FCM token
-
-- all Partner screens use realtime invalidation
-
-- no Deepak-specific logic remains
-
-Now prove this with REAL transactions.
-
-==================================================
-
-1. CANONICAL IDENTITY
-
-==================================================
-
-For each tested partner verify:
-
-partners.id
-
-auth.users.id
-
-user_roles.user_id
-
-push_tokens user/account identity
-
-assignments.partner_id
-
-partner_notifications.partner_id
-
-Identify the CANONICAL partner/account identity.
-
-Phone matching may be used ONLY as a fallback/recovery mechanism.
-
-Do NOT use phone number as the primary assignment identity.
-
-==================================================
-
-2. DEEPAK TEST
-
-==================================================
-
-Admin assigns a fresh Daily Shine booking to:
-
-Deepak 9000000006
-
-Verify:
-
-assignment DB
-
-partner notification
-
-realtime
-
-Home
-
-Available
-
-Daily Route
-
-Map
-
-Earnings
-
-FCM push
-
-==================================================
-
-3. NON-DEEPAK TESTS
-
-==================================================
-
-Repeat with at least THREE different non-Deepak partners.
-
-Use:
-
-Partner A
-
-Partner B
-
-Partner C
-
-Each must receive the exact same assignment flow.
-
-==================================================
-
-4. IDENTITY FRAGMENTATION TEST
-
-==================================================
-
-For one previously affected partner, inspect whether:
-
-phone number
-
-→ multiple user IDs
-
-exist.
-
-If duplicates exist:
-
-verify the system selects the CURRENT ACTIVE CANONICAL PARTNER ACCOUNT.
-
-It must NOT accidentally send the notification to a legacy/customer account.
-
-==================================================
-
-5. DATABASE
-
-==================================================
-
-After Admin assignment verify:
-
-assignment.partner_id
-
-=
-
-canonical partner id
-
-partner_notifications.partner_id
-
-=
-
-same canonical partner id
-
-push token owner
-
-=
-
-same canonical account
-
-==================================================
-
-6. REALTIME
-
-==================================================
-
-For every tested partner:
-
-event emitted
-
-event received
-
-partner identity matched
-
-query invalidation fired
-
-assignment refetched
-
-No manual refresh.
-
-==================================================
-
-7. PARTNER APP
-
-==================================================
-
-Immediately after Admin assignment:
-
-Home updates
-
-Available updates
-
-Daily Route updates
-
-Map updates
-
-Notifications update
-
-Earnings update
-
-==================================================
-
-8. PUSH
-
-==================================================
-
-If valid FCM token exists:
-
-push received.
-
-If push fails:
-
-Partner App must STILL update through database/realtime.
-
-==================================================
-
-9. OFFLINE RECOVERY
-
-==================================================
-
-Close one partner's app.
-
-Admin assigns them.
-
-Reopen/login.
-
-Assignment must be recovered automatically.
-
-==================================================
-
-10. FINAL COMPARISON
-
-==================================================
-
-Return:
-
-PARTNER | ASSIGNMENT | IN-APP | REALTIME | HOME | ROUTE | EARNINGS | PUSH
-
-Deepak:
-
-____
-
-Partner A:
-
-____
-
-Partner B:
-
-____
-
-Partner C:
-
-____
-
-==================================================
-
-11. CRITICAL SAFETY CHECK
-
-==================================================
-
-Verify that phone-based resolution can NEVER cause:
-
-Partner A assignment
-
-→ Partner B notification
-
-or:
-
-Partner assignment
-
-→ legacy customer account notification
-
-The final assignment recipient must always resolve to the canonical partner
-
-account.
-
-==================================================
-
-FINAL ACCEPTANCE
-
-At least THREE non-Deepak partners must successfully receive:
-
-✓ Admin assignment
-
-✓ in-app notification
-
-✓ realtime update
-
-✓ Home update
-
-✓ Daily Route update
-
-✓ earnings update
-
-✓ push when token is valid
-
-using the same code path as Deepak.
-
-No manual database repair.
-
-No Deepak exception.
-
-No trial exception.
-
-No phone-only identity assignment.
-
-Only then mark the E2E partner-assignment system as fixed.`}
+                                            For the code present, I get the error below.
+
+Please think step-by-step in order to resolve it.
+\`\`\`
+# Error number 1:
+#################
+
+The app returned 500 while handling GET /. The error was handled by a route or error boundary, so no stack was captured — check the failing loader/route code and the dev server output.
+
+{
+  "timestamp": 1787401141261,
+  "error_type": "RUNTIME_ERROR",
+  "filename": "Unknown file",
+  "lineno": 0,
+  "colno": 0,
+  "stack": "Unavailable",
+  "has_blank_screen": true
+}
+
+# Error number 2:
+#################
+
+TypeError: __vite_ssr_import_5__.Route.update is not a function
+
+{
+  "timestamp": 1787401175565,
+  "error_type": "RUNTIME_ERROR",
+  "filename": "Unknown file",
+  "lineno": 0,
+  "colno": 0,
+  "stack": "TypeError: __vite_ssr_import_5__.Route.update is not a function\\n    at eval (/dev-server/src/routeTree.gen.ts:126:37)\\n    at async ESModulesEvaluator.runInlinedModule (file:///dev-server/node_modules/vite/dist/node/module-runner.js:913:3)\\n    at async ModuleRunner.directRequest (file:///dev-server/node_modules/vite/dist/node/module-runner.js:1146:59)\\n    at async ModuleRunner.cachedRequest (file:///dev-server/node_modules/vite/dist/node/module-runner.js:1053:73)\\n    at async eval (/dev-server/src/router.tsx:3:1)\\n    at async ESModulesEvaluator.runInlinedModule (file:///dev-server/node_modules/vite/dist/node/module-runner.js:913:3)\\n    at async ModuleRunner.directRequest (file:///dev-server/node_modules/vite/dist/node/module-runner.js:1146:59)\\n    at async ModuleRunner.cachedRequest (file:///dev-server/node_modules/vite/dist/node/module-runner.js:1053:73)\\n    at async Promise.all (index 0)\\n    at async loadEntries (/dev-server/node_modules/@tanstack/start-server-core/src/createStartHandler.ts:235:53)\",
+  "has_blank_screen": true
+}
+\`\`\``}
           </div>
         </div>
       </footer>
