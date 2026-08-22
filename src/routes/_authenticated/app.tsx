@@ -33,6 +33,22 @@ function PartnerRuntime() {
   const { data: partner } = usePartner();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const location = useLocation();
+
+  // P0 — FIX PARTNER BACK NAVIGATION
+  // Prevent partners from accidentally backing into the public landing page (/) 
+  // or other unauthorized routes.
+  useEffect(() => {
+    if (location.pathname === "/") {
+      console.log("[PARTNER-NAV] Back navigation hit public root. Redirecting to Partner Home...");
+      navigate({ to: "/app", replace: true });
+    }
+    // Also block access to customer routes for logged in partners
+    if (location.pathname.startsWith("/c/")) {
+      console.log("[PARTNER-NAV] Partner attempted to access customer route. Redirecting to Partner Home...");
+      navigate({ to: "/app", replace: true });
+    }
+  }, [location.pathname, navigate]);
 
   usePartnerHeartbeat(partner?.id);
   useFcmRegistration(partner?.id ?? null, "partner");

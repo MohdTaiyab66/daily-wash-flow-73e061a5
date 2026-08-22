@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,20 @@ export const Route = createFileRoute("/auth")({
   ssr: true,
   head: () => ({ meta: [{ title: "Partner Login — Urban Wash" }] }),
   validateSearch: (search) => z.object({ redirect: z.string().startsWith("/").optional().catch(undefined) }).parse(search),
+  beforeLoad: async ({ search }) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.email) {
+      const email = session.user.email;
+      const isAdminLogin = search.redirect?.startsWith("/admin");
+      
+      if (isAdminLogin && email.endsWith("@admin.urbanwash.app")) {
+        throw redirect({ to: (search.redirect as any) || "/admin" });
+      }
+      if (!isAdminLogin && email.endsWith("@partner.urbanwash.app")) {
+        throw redirect({ to: (search.redirect as any) || "/app" });
+      }
+    }
+  },
   component: AuthPage,
 });
 
