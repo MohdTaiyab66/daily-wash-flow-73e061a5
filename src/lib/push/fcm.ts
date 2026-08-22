@@ -330,6 +330,14 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
       // Dispatch Premium In-App Notification Banner
       dispatchInAppNotification(data, event.notification);
 
+      // P0 ARCHITECTURE FIX: Trigger immediate cache invalidation when a notification arrives.
+      // This is the "fast path" that complements the realtime listener.
+      const type = (data.type as string) || "default";
+      if (type.includes('assignment') || type.includes('booking') || type === 'new_assignment') {
+        window.dispatchEvent(new CustomEvent('urbanwash:assignment-refresh', { detail: data }));
+      }
+
+
       await recordLastFcm(
 
         event,
