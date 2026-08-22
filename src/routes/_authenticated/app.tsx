@@ -62,16 +62,14 @@ function PartnerRuntime() {
     const pending = consumePendingLink();
     if (pending) navigate({ to: pending as any });
 
-    const invalidateAll = () => {
-      // Sync data state from push events
-      qc.invalidateQueries({ queryKey: ["today-assignment"] });
-      qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
-      qc.invalidateQueries({ queryKey: ["partner-services"] });
       qc.invalidateQueries({ queryKey: ["partner-earnings"] });
       qc.invalidateQueries({ queryKey: ["partner-open-offers-home"] });
       qc.invalidateQueries({ queryKey: ["partner-booking-requests"] });
       qc.invalidateQueries({ queryKey: ["history"] });
+      
+      // Authoritative today-assignment invalidate
+      qc.invalidateQueries({ queryKey: ["today-assignment"] });
     };
 
     const onLink = (e: Event) => {
