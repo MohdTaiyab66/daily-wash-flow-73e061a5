@@ -13,7 +13,7 @@ export function usePartner() {
       const { data, error } = await supabase
         .from("partners")
         .select("*")
-        .eq("id", session.user.id)
+        .or(`id.eq.${session.user.id},phone.eq.${session.user.phone?.replace('91', '') || 'NONE'},email.eq.${session.user.email}`)
         .maybeSingle();
         
       if (error) throw error;
