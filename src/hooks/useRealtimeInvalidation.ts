@@ -72,7 +72,7 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
     }
 
     return () => {
-      console.log(`[PARTNER-REALTIME] [useRealtimeInvalidation] Unmounting listener for: ${tableKey}`);
+      // Clean up listener
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("online", onOnline);
       void nativeListener?.remove();
