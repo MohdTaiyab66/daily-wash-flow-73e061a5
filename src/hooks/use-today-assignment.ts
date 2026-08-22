@@ -61,6 +61,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   const isMonday = now.getDay() === 1; // getDay() is fine for Monday check as long as we're consistent, but IST is better
 
 
+  // Resolve canonical partner identity for data fetching
   const { data: me } = await supabase
     .from("partners")
     .select("id")
