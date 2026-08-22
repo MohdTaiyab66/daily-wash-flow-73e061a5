@@ -38,8 +38,7 @@ function PartnerRuntime() {
   useFcmRegistration(partner?.id ?? null, "partner");
   usePartnerRouteSync(partner?.id ?? null);
   
-  // UNIVERSAL P0 FIX: Keep today-assignment polling active in background
-  // while the Partner App is authenticated, ensuring Home/Route always sync.
+  // Poll today-assignment in background
   useTodayAssignment();
 
   // Deep-link from push notifications (background/killed app taps) and invalidation.
