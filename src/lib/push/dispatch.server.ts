@@ -741,8 +741,29 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
           action_token: String(o.id),
         };
 
+        // UNIVERSAL P0 FIX: Identity fragmentation resolution for Booking Pushes.
+        let targetUserId = o.partner_id;
+        const { data: partner } = await sb.from("partners").select("phone").eq("id", o.partner_id).maybeSingle();
+        if (partner?.phone) {
+          const { data: tokens } = await sb.from("push_tokens").select("id").eq("user_id", o.partner_id).is("invalid_at", null).limit(1);
+          if (!tokens || tokens.length === 0) {
+            const { data: others } = await sb.from("partners").select("id").eq("phone", partner.phone).neq("id", o.partner_id);
+            const otherPartnerIds = (others || []).map((p: any) => p.id);
+            const { data: customers } = await sb.from("customer_profiles").select("id").eq("phone", partner.phone);
+            const customerIds = (customers || []).map((c: any) => c.id);
+            const allIdentityIds = [...new Set([...otherPartnerIds, ...customerIds])];
+            
+            if (allIdentityIds.length > 0) {
+              const { data: altTokens } = await sb.from("push_tokens").select("user_id").in("user_id", allIdentityIds).is("invalid_at", null).limit(1);
+              if (altTokens && altTokens.length > 0) {
+                targetUserId = altTokens[0].user_id;
+              }
+            }
+          }
+        }
+
         const result = await sendOfferPush({
-          userId: o.partner_id,
+          userId: targetUserId,
           title,
           body,
           data: dataPayload,
