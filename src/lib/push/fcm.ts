@@ -221,7 +221,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
 
     try {
       const { registerPushToken } = await import("./register-token.functions");
-      console.log(`[PARTNER-FCM] registerPushToken RPC starting...`);
+      // Using registration function
       const { data: { session } } = await supabase.auth.getSession();
       console.log(`[PARTNER-FCM] auth session present: ${!!session}`);
       
