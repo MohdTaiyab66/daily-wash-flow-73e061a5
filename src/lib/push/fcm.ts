@@ -256,7 +256,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         // Direct upsert success
         await markOk();
       } else {
-        console.error(`[CUSTOMER-FCM-REGISTRATION] direct upsert FAILED: ${error.code} ${error.message}`);
+        // Direct upsert failed
         await markErr(`${error.code ?? ""} ${error.message ?? ""}`.trim());
       }
     } catch (e: any) {
