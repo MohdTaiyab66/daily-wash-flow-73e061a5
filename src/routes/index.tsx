@@ -1,8 +1,22 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { Shield, Car, CheckCircle2, MapPin, Clock } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export const Route = createFileRoute('/')({
+  beforeLoad: async () => {
+    // P0 — FIX PARTNER AUTH REDIRECT
+    // If a partner or admin is already logged in, they should NOT see the public landing page.
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.email) {
+      if (session.user.email.endsWith("@partner.urbanwash.app")) {
+        throw redirect({ to: "/app" });
+      }
+      if (session.user.email.endsWith("@admin.urbanwash.app")) {
+        throw redirect({ to: "/admin" });
+      }
+    }
+  },
   component: LandingPage,
 });
 
