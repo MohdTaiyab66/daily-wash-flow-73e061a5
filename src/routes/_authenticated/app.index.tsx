@@ -66,6 +66,9 @@ function HomePage() {
   // Ensure we refetch on mount to clear any stale cache from previous sessions
   useEffect(() => {
     todayQuery.refetch();
+    qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
+    qc.invalidateQueries({ queryKey: ["partner-earnings"] });
+    qc.invalidateQueries({ queryKey: ["history"] });
   }, []);
   
   const todayData = todayQuery.data;
