@@ -110,7 +110,15 @@ function TopBar() {
     (async () => {
       const { data: u, error } = await supabase.auth.getUser();
       if (error || !u.user || cancelled) return;
-      const partnerId = u.user.id;
+      
+      const { data: me } = await supabase
+        .from("partners")
+        .select("id")
+        .or(`id.eq.${u.user.id},phone.eq.${u.user.phone?.replace('91', '') || 'NONE'},email.eq.${u.user.email}`)
+        .maybeSingle();
+
+      const partnerId = me?.id || u.user.id;
+
       (window as any)._supabase_partner_channel = channel = supabase
         .channel(`partner-notif-${partnerId}`)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "partner_notifications", filter: `partner_id=eq.${partnerId}` },
