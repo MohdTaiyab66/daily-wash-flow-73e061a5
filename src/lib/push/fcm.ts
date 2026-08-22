@@ -228,7 +228,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
       const res = await registerPushToken({
         data: { token, platform: nativePlatform(), device_id: deviceId, app },
       });
-      console.log(`[PARTNER-FCM] registerPushToken succeeded:`, res);
+      // Registration function success
       await markOk();
       return;
 
