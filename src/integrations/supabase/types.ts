@@ -7196,6 +7196,29 @@ export type Database = {
         }[]
       }
       get_partner_ui_prefs: { Args: never; Returns: Json }
+      get_partner_work: {
+        Args: { p_partner_id: string }
+        Returns: {
+          address: string
+          assignment_id: string
+          assignment_status: string
+          booking_id: string
+          booking_status: string
+          customer_id: string
+          customer_name: string
+          customer_phone: string
+          earning_value: number
+          location_lat: number
+          location_lng: number
+          scheduled_date: string
+          scheduled_time: string
+          service_id: string
+          service_status: Database["public"]["Enums"]["service_status"]
+          vehicle_id: string
+          vehicle_name: string
+          vehicle_number: string
+        }[]
+      }
       get_pending_offer_for_partner: {
         Args: { p_partner_id: string }
         Returns: Json
