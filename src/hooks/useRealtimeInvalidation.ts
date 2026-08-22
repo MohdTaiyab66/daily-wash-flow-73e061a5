@@ -22,7 +22,7 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
       // Invalidation triggered
       if (queryKeys?.length) {
         queryKeys.forEach((key) => {
-          console.log(`[PARTNER-REALTIME] [SYNC] Invalidating key:`, key);
+          // Invalidating key
           queryClient.invalidateQueries({ queryKey: key as any });
         });
       } else {
