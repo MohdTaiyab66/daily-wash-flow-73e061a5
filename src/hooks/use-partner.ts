@@ -20,7 +20,7 @@ export function usePartner() {
       return data;
     },
     refetchOnWindowFocus: false,
-    staleTime: 5_000, // Reduced staleTime to force more frequent syncs on mount/navigation
+    staleTime: 5_000,
     refetchOnMount: "always",
   });
 }

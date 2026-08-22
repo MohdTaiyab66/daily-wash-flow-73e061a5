@@ -122,8 +122,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
     return;
   }
   
-  // P0 UNIVERSAL: Force initialization for EVERY user on mount/login.
-  // This ensures we always have a valid token and active sync for all partners.
+  // Force initialization for user on mount/login.
   started = false; 
   (window as any)._fcm_last_user = userId;
   
@@ -330,8 +329,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
       // Dispatch Premium In-App Notification Banner
       dispatchInAppNotification(data, event.notification);
 
-      // P0 ARCHITECTURE FIX: Trigger immediate cache invalidation when a notification arrives.
-      // This is the "fast path" that complements the realtime listener.
+      // Trigger immediate cache invalidation when a notification arrives.
       const type = (data.type as string) || "default";
       if (type.includes('assignment') || type.includes('booking') || type === 'new_assignment') {
         window.dispatchEvent(new CustomEvent('urbanwash:assignment-refresh', { detail: data }));
@@ -366,7 +364,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
     const data = (event.notification?.data ?? {}) as Record<string, unknown>;
     const type = (data.type as string) || "default";
     
-    // P0 ARCHITECTURE FIX: Also trigger refresh on tap to ensure we have latest state after coming from background.
+    // Trigger refresh on tap to ensure we have latest state after coming from background.
     if (type.includes('assignment') || type.includes('booking') || type === 'new_assignment') {
       window.dispatchEvent(new CustomEvent('urbanwash:assignment-refresh', { detail: data }));
     }
@@ -440,7 +438,7 @@ export async function stopFcm(userId: string | null) {
         .from("push_tokens")
         .update({ 
           invalid_at: new Date().toISOString(),
-          token: `INVALID_${Date.now()}` // P0 FIX: Scramble the token field to prevent accidental reuse
+          token: `INVALID_${Date.now()}` // Scramble the token field to prevent accidental reuse
         } as any)
         .match({ user_id: userId, device_id: deviceId } as any);
     }
