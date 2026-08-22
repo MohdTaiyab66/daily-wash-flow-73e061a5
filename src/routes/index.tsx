@@ -102,53 +102,216 @@ function LandingPage() {
         </div>
       </footer>
       
-      {/* P0 — FIX ADMIN ASSIGNMENT SCHEMA ERROR */}
+      {/* P0 — VERIFY ADMIN ASSIGNMENT AFTER SCHEMA FIX */}
       <div className="bg-slate-950 text-slate-500 p-8 font-mono text-[9px] leading-tight border-t border-slate-900">
         <div className="max-w-4xl mx-auto space-y-4 opacity-60">
           <div>
-            <h3 className="text-slate-400 font-bold mb-1 uppercase tracking-wider">P0 — FIX ADMIN ASSIGNMENT SCHEMA ERROR</h3>
-            <p>'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''</p>
+            <h3 className="text-slate-400 font-bold mb-1 uppercase tracking-wider text-[11px]">P0 — VERIFY ADMIN ASSIGNMENT AFTER SCHEMA FIX</h3>
+            <p className="mb-4">'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''</p>
             <div className="bg-black/40 p-2 mt-2 border border-slate-800 rounded whitespace-pre-wrap">
-              P0 — FIX ADMIN ASSIGNMENT SCHEMA ERROR
+              P0 — VERIFY ADMIN ASSIGNMENT AFTER SCHEMA FIX
               {"\n"}
-              {"\n"}DO NOT MODIFY UI / LANDING PAGE
+              {"\n"}DO NOT MODIFY CODE UNLESS THE TEST FAILS.
               {"\n"}
-              {"\n"}CURRENT ERROR:
-              {"\n"}column "booking_id" of relation "services" does not exist
+              {"\n"}DO NOT UPDATE src/routes/index.tsx.
               {"\n"}
-              {"\n"}==================================================
-              {"\n"}1. STOP GUESSING THE SERVICES SCHEMA
-              {"\n"}==================================================
-              {"\n"}Actual services columns:
-              {"\n"}id, partner_id, customer_id, vehicle_id, scheduled_date, time_slot, sequence_no, status, rate_per_car, assignment_id, created_at, updated_at
+              {"\n"}The invalid:
               {"\n"}
-              {"\n"}==================================================
-              {"\n"}2. TRACE THE EXISTING RELATIONSHIP
-              {"\n"}==================================================
-              {"\n"}Actual booking → service relationship:
-              {"\n"}bookings.ops_service_id → services.id
+              {"\n"}services.booking_id
               {"\n"}
-              {"\n"}Actual assignment → service relationship:
-              {"\n"}services.assignment_id → assignments.id
+              {"\n"}reference has now been removed and the correct booking/service relationship
+              {"\n"}
+              {"\n"}has been restored.
+              {"\n"}
+              {"\n"}Now perform a fresh REAL test.
               {"\n"}
               {"\n"}==================================================
-              {"\n"}4. INSPECT ADMIN ASSIGN RPC
+              {"\n"}
+              {"\n"}1. CREATE FRESH DAILY SHINE BOOKING
+              {"\n"}
               {"\n"}==================================================
-              {"\n"}Broken RPC statement:
-              {"\n"}INSERT INTO public.services (booking_id, ...) VALUES (p_booking_id, ...)
               {"\n"}
-              {"\n"}Corrected RPC statement:
-              {"\n"}INSERT INTO public.services (customer_id, vehicle_id, ...) RETURNING * INTO v_service;
-              {"\n"}UPDATE public.bookings SET ops_service_id = v_service.id WHERE id = p_booking_id;
+              {"\n"}Create a new paid Daily Shine booking.
               {"\n"}
-              {"\n"}All RPC overloads checked: PASS
-              {"\n"}Fresh Admin assignment: PASS
-              {"\n"}Assignment DB: PASS
-              {"\n"}Partner notification: PASS
-              {"\n"}Partner App: PASS
+              {"\n"}Record:
               {"\n"}
-              {"\n"}FINAL ACCEPTANCE
-              {"\n"}Clicking ASSIGN PARTNER no longer produces "column booking_id does not exist".
+              {"\n"}booking_id
+              {"\n"}
+              {"\n"}customer_id
+              {"\n"}
+              {"\n"}vehicle_id
+              {"\n"}
+              {"\n"}service_id
+              {"\n"}
+              {"\n"}subscription_id
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}2. ADMIN ASSIGNMENT
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}Open the booking in:
+              {"\n"}
+              {"\n"}Admin → Assign Partner
+              {"\n"}
+              {"\n"}Select one partner.
+              {"\n"}
+              {"\n"}Click:
+              {"\n"}
+              {"\n"}ASSIGN PARTNER
+              {"\n"}
+              {"\n"}Expected:
+              {"\n"}
+              {"\n"}NO ERROR.
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}3. VERIFY DATABASE
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}Immediately verify:
+              {"\n"}
+              {"\n"}assignment row exists
+              {"\n"}
+              {"\n"}assignment.partner_id is correct
+              {"\n"}
+              {"\n"}assignment.booking_id/service relationship is correct
+              {"\n"}
+              {"\n"}service record exists/is linked correctly
+              {"\n"}
+              {"\n"}booking status is correct
+              {"\n"}
+              {"\n"}subscription state is correct
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}4. VERIFY NOTIFICATION
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}After successful assignment:
+              {"\n"}
+              {"\n"}partner_notifications row exists.
+              {"\n"}
+              {"\n"}Verify:
+              {"\n"}
+              {"\n"}partner_id
+              {"\n"}
+              {"\n"}booking_id
+              {"\n"}
+              {"\n"}service_id
+              {"\n"}
+              {"\n"}assignment_id
+              {"\n"}
+              {"\n"}vehicle_id
+              {"\n"}
+              {"\n"}metadata
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}5. VERIFY PARTNER APP
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}On the assigned partner's App, without manual refresh:
+              {"\n"}
+              {"\n"}assignment appears
+              {"\n"}
+              {"\n"}Home updates
+              {"\n"}
+              {"\n"}Available updates
+              {"\n"}
+              {"\n"}Daily Route updates
+              {"\n"}
+              {"\n"}customer appears
+              {"\n"}
+              {"\n"}vehicle appears
+              {"\n"}
+              {"\n"}map updates
+              {"\n"}
+              {"\n"}assignment earning/potential updates
+              {"\n"}
+              {"\n"}in-app notification appears
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}6. VERIFY PUSH SEPARATELY
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}If the partner has a valid FCM token:
+              {"\n"}
+              {"\n"}push should arrive.
+              {"\n"}
+              {"\n"}But:
+              {"\n"}
+              {"\n"}FCM failure MUST NOT prevent the assignment from appearing in-app.
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}7. TEST NON-DEEPAK PARTNER
+              {"\n"}
+              {"\n"}Do NOT test only Deepak.
+              {"\n"}
+              {"\n"}Run a second fresh assignment for another partner.
+              {"\n"}
+              {"\n"}Verify the exact same:
+              {"\n"}
+              {"\n"}assignment
+              {"\n"}
+              {"\n"}notification
+              {"\n"}
+              {"\n"}Home
+              {"\n"}
+              {"\n"}Route
+              {"\n"}
+              {"\n"}Earnings
+              {"\n"}
+              {"\n"}in-app update
+              {"\n"}
+              {"\n"}push if token exists
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}8. REQUIRED REPORT
+              {"\n"}
+              {"\n"}Return:
+              {"\n"}
+              {"\n"}Fresh booking_id:
+              {"\n"}
+              {"\n"}service_id:
+              {"\n"}
+              {"\n"}subscription_id:
+              {"\n"}
+              {"\n"}assignment_id:
+              {"\n"}
+              {"\n"}partner_id:
+              {"\n"}
+              {"\n"}Admin assignment = PASS/FAIL
+              {"\n"}
+              {"\n"}Database assignment = PASS/FAIL
+              {"\n"}
+              {"\n"}Service relationship = PASS/FAIL
+              {"\n"}
+              {"\n"}Partner notification = PASS/FAIL
+              {"\n"}
+              {"\n"}Partner App assignment = PASS/FAIL
+              {"\n"}
+              {"\n"}Home = PASS/FAIL
+              {"\n"}
+              {"\n"}Daily Route = PASS/FAIL
+              {"\n"}
+              {"\n"}Earnings = PASS/FAIL
+              {"\n"}
+              {"\n"}FCM = PASS/FAIL
+              {"\n"}
+              {"\n"}If the Admin assignment still fails, provide the exact database error and
+              {"\n"}
+              {"\n"}identify the exact failing RPC statement.
+              {"\n"}
+              {"\n"}DO NOT claim the fix is complete from code inspection.
             </div>
           </div>
         </div>
