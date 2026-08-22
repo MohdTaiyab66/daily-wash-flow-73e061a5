@@ -115,7 +115,7 @@ function dispatchInAppNotification(data: Record<string, any>, notif: any) {
 export async function startFcm(userId: string, app: "partner" | "customer" = appVariant()) {
   const native = isNative();
   const platform = nativePlatform();
-  console.log(`[PARTNER-FCM] hook mounted. userId: ${userId}, app: ${app}, isNative: ${native}, platform: ${platform}`);
+  // Initialize FCM for native platform
 
   if (!native || !userId) {
     console.log(`[PARTNER-FCM] startFcm aborted: native=${native}, userId=${!!userId}`);
