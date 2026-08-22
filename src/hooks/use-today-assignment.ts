@@ -29,7 +29,7 @@ export type TodayAssignmentData = {
   fetchedAt: number;
 };
 
-const CACHE_KEY = "uw:today-assignment:last-success";
+const CACHE_KEY = "uw:today-assignment:last-success-v2";
 
 function readCache(): TodayAssignmentData | null {
   try {
