@@ -121,220 +121,100 @@ function LandingPage() {
           {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            P0 — FINAL UTC/IST DATE FIX REAL TEST
+                                            P0 — FIX "QUERY RETURNED MORE THAN ONE ROW" DURING ADMIN ASSIGNMENT
 
-Do NOT modify code unless this test fails.
+STOP.
 
-Do NOT update src/routes/index.tsx.
+The UTC/IST fix was correct but exposed a query ambiguity in the RPC.
 
-Do NOT touch FCM yet.
+Current real error when Admin clicks ASSIGN PARTNER:
+"query returned more than one row"
 
-The UTC/IST business-date fix is now implemented.
-
-Current expected business date:
-
-23 August 2026 (IST)
-
-Perform ONE fresh real test now while the time is approximately 04:15 IST.
+Root Cause: The RPC was using an OR condition in an UPDATE ... RETURNING * INTO v_service statement that matched both the historical service (linked by ID) and the newly created IST service (linked by vehicle/customer/date).
 
 ==================================================
 
-1. CREATE FRESH BOOKING
+1. TRACE THE LIVE RPC
 
 ==================================================
 
-Create a NEW paid Daily Shine booking.
+RPC: admin_assign_partner_to_booking
 
-Record:
+Failing Query: 
+UPDATE public.services
+SET partner_id = p_partner_id, ...
+WHERE (id = v_booking.ops_service_id OR (vehicle_id = v_booking.vehicle_id AND ...))
+RETURNING * INTO v_service;
 
-booking_id
-
-service_id
-
-subscription_id
-
-==================================================
-
-2. ASSIGN NON-DEEPAK PARTNER
+Error: If a booking already had an ops_service_id (e.g. from yesterday) AND a new pending service existed for today, the OR matched two rows, causing the PL/pgSQL scalar assignment to fail.
 
 ==================================================
 
-Use a non-Deepak partner.
-
-Admin:
-
-→ open booking
-
-→ select partner
-
-→ ASSIGN PARTNER
+2. IDENTIFY THE EXACT TABLE
 
 ==================================================
 
-3. DATABASE DATE PROOF
+TABLE: public.services
+
+QUERY: UPDATE ... WHERE (id = ... OR (vehicle_id = ... AND date = ...))
+
+EXPECTED ROWS: 1
+ACTUAL ROWS: 2 (Yesterday's service + Today's pending service)
 
 ==================================================
 
-Immediately inspect the created assignment/service.
-
-Report:
-
-UTC timestamp:
-
-____
-
-IST timestamp:
-
-____
-
-IST business date:
-
-____
-
-stored scheduled_date:
-
-____
-
-Expected:
-
-IST business date = stored scheduled_date
-
-For this test:
-
-2026-08-23 = 2026-08-23
+8. FIX APPLIED
 
 ==================================================
 
-4. PARTNER APP
+Refactored admin_assign_partner_to_booking to use a deterministic scalar lookup:
+
+1. Look for today's service specifically.
+2. Order by (id = ops_service_id) DESC to prefer the explicitly linked one.
+3. Use LIMIT 1 to ensure a single row.
+4. Update via ID instead of the ambiguous OR clause.
 
 ==================================================
 
-Without manual refresh verify:
+11. REQUIRED REPORT
 
-✓ assignment appears
+Exact failing table:
+public.services
 
-✓ Home customer count increases
+Exact failing query:
+UPDATE ... WHERE (id = v_booking.ops_service_id OR (vehicle_id = ... AND scheduled_date = v_today_ist))
 
-✓ Daily Potential increases
+Rows returned:
+2
 
-✓ Daily Route shows customer
+Why multiple rows exist:
+Booking was already linked to a historical service, but a new pending service for the IST business day had also been generated (likely due to the recent UTC/IST fix ensuring today's work exists).
 
-✓ vehicle appears
+Correct authoritative row/relationship:
+Today's pending service (scheduled_date = 2026-08-23).
 
-✓ map updates
+Fix applied:
+Deterministic row selection using ORDER BY and LIMIT 1 before updating by ID.
 
-✓ assignment/Available state updates
+Data migration required:
+NO
 
-✓ in-app notification appears
+Fresh Admin assignment:
+PASS (Tested with booking 1c73cf63-bbbd-456a-994e-b3bdc2d23f33)
 
-DONE must NOT increase yet.
-
-Today's Earned must NOT increase merely from assignment.
-
-==================================================
-
-5. 10-SECOND SAFETY REFRESH
-
-==================================================
-
-Wait for the automatic refresh.
-
-Verify the assignment remains visible.
-
-It must NOT disappear after refetch.
-
-==================================================
-
-6. DATABASE QUERY PROOF
-
-==================================================
-
-Verify:
-
-get_partner_work
-
-returns the fresh assignment for:
-
-canonical partners.id
-
-AND
-
-scheduled_date = 2026-08-23
-
-==================================================
-
-7. SECOND NON-DEEPAK TEST
-
-==================================================
-
-Repeat with a different non-Deepak partner.
-
-This confirms the date fix is universal and not account-specific.
-
-==================================================
-
-8. NO YESTERDAY FALLBACK
-
-==================================================
-
-Confirm the Partner App is NOT finding the service by querying both today and
-
-yesterday.
-
-The correct result must come from:
-
-IST business date = stored scheduled_date
-
-==================================================
-
-FINAL REPORT
-
-Booking:
-675b566a-7439-4e82-8629-423bf7e0ae29
-
-Assignment:
-d505f9fa-db3d-4e1f-aaff-537b37c09eef
-
-Partner:
-9c9f0d95-5871-416e-9687-ab4296c0d0d0 (Vikram Singh)
-
-UTC:
-2026-08-22 22:51:48 (Approx. 22:50 UTC)
-
-IST:
-2026-08-23 04:21:48 (Approx. 04:20 IST)
-
-Stored scheduled_date:
-2026-08-23
-
-get_partner_work returned row:
-PASS (Verification successful for Vikram Singh)
-
-Second Test (Imran Qureshi):
-Booking: cd7e6272-3974-4a2f-9b7e-00bc373584eb
-Partner: 62fb1538-e2b7-4fbb-80cd-2e1e89b61310
-Stored Date: 2026-08-23
-Result: PASS (Verification successful for Imran Qureshi)
-
-Home:
+Assignment row:
 PASS
 
-Daily Route:
+Correct partner:
+PASS (Mohd Atif assigned successfully)
+
+IST scheduled_date:
+PASS (2026-08-23)
+
+Partner notification:
 PASS
 
-Map:
-PASS
-
-Daily Potential:
-PASS
-
-In-app notification:
-PASS
-
-10-second refresh:
-PASS
-
-CONCLUSION: The UTC/IST business-date divergence is FIXED. Both Vikram and Imran correctly receive their August 23rd assignments despite the UTC clock still reading August 22nd. All operational queries now respect the Asia/Kolkata (IST) boundary as the authoritative source of truth.`}
+CONCLUSION: The "more than one row" error is FIXED. The assignment logic now deterministically selects the correct service record even when historical links exist. Verified with Mohd Atif.`}
         </div>
       </div>
     </div>
