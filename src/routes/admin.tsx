@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Bell, ChevronDown, LogOut, MapPin, Menu, PanelLeftClose, PanelLeft } from "lucide-react";
+import { useSignOut } from "@/hooks/use-sign-out";
 
 export const Route = createFileRoute("/admin")({
   ssr: true,
@@ -139,6 +140,7 @@ function AdminLayout() {
   const [email, setEmail] = useState<string>("");
   const lastNotifIdRef = useRef<string | null>(null);
   const qc = useQueryClient();
+  const { signOut } = useSignOut();
 
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
@@ -259,8 +261,7 @@ function AdminLayout() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
-                    await supabase.auth.signOut();
-                    window.location.href = "/auth";
+                    await signOut("/auth");
                   }}
                 >
                   <LogOut className="mr-2 h-4 w-4" /> Sign out
