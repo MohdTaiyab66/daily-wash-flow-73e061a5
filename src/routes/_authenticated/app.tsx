@@ -12,6 +12,7 @@ import { DeviceSetupWizard } from "@/components/partner/DeviceSetupWizard";
 import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
 import { consumePendingLink } from "@/lib/push/fcm";
 import { usePartnerRouteSync } from "@/hooks/use-route-sync";
+import { useTodayAssignment } from "@/hooks/use-today-assignment";
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppLayout,
