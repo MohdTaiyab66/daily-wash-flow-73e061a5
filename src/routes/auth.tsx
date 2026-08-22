@@ -131,7 +131,7 @@ function AuthPage() {
       // Requesting login OTP
       const res = await requestOtp({ data: { phone, role: isAdminLogin ? "admin" : "partner" } });
       setOtpDigits(Array(otpLength).fill(""));
-      console.log("[PARTNER-AUTH:03] OTP_SENT", { newAccount: res.newAccount });
+      // OTP sent successfully
       
       // FIX: Never skip OTP screen, even for new accounts.
       setStep("otp");
