@@ -48,35 +48,20 @@ function EarningsPage() {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
       
-      const today = getTodayIST();
-      const { data: a } = await supabase
-        .from("assignments")
-        .select("*")
-        .eq("partner_id", u.user.id)
-        .eq("status", "active")
-        .gte("end_date", today)
-        .order("start_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const { data: partnerId } = await supabase.rpc("resolve_partner_id", { u_id: u.user.id } as any);
+      if (!partnerId) return null;
 
-      if (!a) return null;
+      const { data: work } = await (supabase.rpc as any)("get_partner_work", { p_partner_id: partnerId });
+      const todayWork = (work as any[]) ?? [];
 
-      const { data: services } = await supabase
-        .from("services")
-        .select("id,vehicle_id,status,scheduled_date")
-        .eq("assignment_id", a.id);
-
-      const all = (services ?? []).filter((s: any) => s.status !== "covered_by_booking");
-      const assignmentTotalCustomers = new Set(all.filter(s => s.scheduled_date === today).map((s: any) => s.vehicle_id ?? s.id).filter(Boolean)).size;
-      const ratePerCar = Number(a.rate_per_car || 17);
-      
-      const expectedDaily = assignmentTotalCustomers * ratePerCar;
+      const assignmentTotalCustomers = new Set(todayWork.map((w: any) => w.vehicle_id).filter(Boolean)).size;
+      const expectedDaily = todayWork.reduce((sum: number, w: any) => sum + (w.earning_value || 0), 0);
       const expectedMonthly = expectedDaily * 26;
 
       return {
         daily: expectedDaily,
         monthly: expectedMonthly,
-        rate: ratePerCar,
+        rate: todayWork[0]?.earning_value || 17,
         count: assignmentTotalCustomers
       };
     }
