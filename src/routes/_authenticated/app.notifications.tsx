@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bell, ArrowLeft, CheckCheck, Sparkles, ClipboardList, Wallet, Radio, Settings2, ChevronRight } from "lucide-react";
+import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 
 export const Route = createFileRoute("/_authenticated/app/notifications")({
   component: NotificationsPage,
