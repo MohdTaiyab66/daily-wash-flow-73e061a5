@@ -47,7 +47,7 @@ export function useSignOut() {
       window.location.href = finalRedirect;
     } catch (error) {
       console.error("Logout error:", error);
-      window.location.href = "/";
+      window.location.href = "/auth";
     }
   };
 

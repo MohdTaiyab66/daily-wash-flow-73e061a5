@@ -41,7 +41,7 @@ function ProfilePage() {
   });
 
   const handleSignOut = async () => {
-    await signOut("/");
+    await signOut();
   };
 
   const verifications = [
