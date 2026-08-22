@@ -344,7 +344,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
         // further action required for the foreground case.
       }
     } catch (e) {
-      console.error("[CUSTOMER-FCM-ANDROID:FOREGROUND:ERR]", e);
+      // Error handling foreground notification
     }
   });
 
