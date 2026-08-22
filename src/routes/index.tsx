@@ -1,77 +1,84 @@
-import { useEffect } from "react";
-import { useNavigate, createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { getTodayIST } from "@/lib/date-utils";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ChevronRight, Layout, Phone, User } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Car, Shield, Smartphone, Zap, CheckCircle2, Navigation, Clock, MapPin, IndianRupee } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/")({
-  component: LandingPage,
-});
-
-function LandingPage() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Redirect to home if needed
-  }, [navigate]);
-
+export const Route = () => {
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-white/50 backdrop-blur-md sticky top-0 z-50">
+      {/* Navigation */}
+      <nav className="border-b bg-white/50 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">UW</span>
+              <Car className="w-5 h-5 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-bold tracking-tight">Urban Wash</h1>
+            <span className="font-bold text-xl tracking-tight">Urban Wash</span>
           </div>
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-            <a href="#" className="hover:text-primary transition-colors">Services</a>
-            <a href="#" className="hover:text-primary transition-colors">Pricing</a>
-            <a href="#" className="hover:text-primary transition-colors">Locations</a>
-            <Button onClick={() => navigate({ to: "/auth" })}>Partner Login</Button>
-          </nav>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" asChild>
+              <Link to="/auth">Login</Link>
+            </Button>
+            <Button asChild>
+              <Link to="/auth">Get Started</Link>
+            </Button>
+          </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto space-y-12">
-          <section className="text-center space-y-6">
-            <h2 className="text-4xl md:text-6xl font-extrabold tracking-tighter">
-              Premium Car Care <br />
-              <span className="text-primary">At Your Doorstep</span>
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Professional waterless car wash and detailing services delivered to your home or office. Quality you can trust, convenience you'll love.
+      {/* Hero Section */}
+      <main>
+        <section className="py-20 px-4">
+          <div className="container mx-auto text-center max-w-3xl">
+            <h1 className="text-5xl md:text-6xl font-black tracking-tighter mb-6 bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Premium Car Care, <br />Right at Your Doorstep
+            </h1>
+            <p className="text-xl text-muted-foreground mb-10 leading-relaxed">
+              Experience the future of car washing. Professional detailing, sustainable practices, and convenience redefined.
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="px-8" onClick={() => navigate({ to: "/auth" })}>
-                Book a Wash
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="h-14 px-8 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20" asChild>
+                <Link to="/auth">Book a Wash</Link>
               </Button>
-              <Button size="lg" variant="outline" className="px-8">
-                Learn More
+              <Button size="lg" variant="outline" className="h-14 px-8 rounded-2xl text-lg font-bold" asChild>
+                <Link to="/auth">Become a Partner</Link>
               </Button>
             </div>
-          </section>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            <FeatureCard 
-              icon={<Layout className="w-6 h-6" />}
-              title="Smart Scheduling"
-              description="Pick a time that works for you. Our system handles the rest."
-            />
-            <FeatureCard 
-              icon={<User className="w-6 h-6" />}
-              title="Expert Partners"
-              description="Trained professionals equipped with premium cleaning kits."
-            />
-            <FeatureCard 
-              icon={<Phone className="w-6 h-6" />}
-              title="Real-time Updates"
-              description="Track your service progress from start to finish via our app."
-            />
           </div>
-        </div>
+        </section>
+
+        {/* Features Grid */}
+        <section className="py-20 bg-muted/30">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <Card className="p-8 border-none bg-white/50 backdrop-blur-sm shadow-sm rounded-3xl">
+                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
+                  <Shield className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Trusted Quality</h3>
+                <p className="text-muted-foreground">Certified professionals using premium products for your vehicle's safety.</p>
+              </Card>
+              <Card className="p-8 border-none bg-white/50 backdrop-blur-sm shadow-sm rounded-3xl">
+                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
+                  <Smartphone className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Seamless App</h3>
+                <p className="text-muted-foreground">Manage bookings, track real-time updates, and pay securely from your phone.</p>
+              </Card>
+              <Card className="p-8 border-none bg-white/50 backdrop-blur-sm shadow-sm rounded-3xl">
+                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
+                  <Zap className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">Fast & Efficient</h3>
+                <p className="text-muted-foreground">Time-saving service that fits your schedule without compromising quality.</p>
+              </Card>
+            </div>
+          </div>
+        </section>
       </main>
 
       <footer className="border-t py-12 mt-20">
@@ -81,129 +88,172 @@ function LandingPage() {
             {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            P0 FINAL SMOKE TEST — POST-CLEANUP
+                                            P0 — DEEPAK VS OTHER PARTNERS FORENSIC AUDIT — PART 1
 
-Do not modify code unless a test fails.
+STOP changing:
 
-Verify:
+- landing page
 
-1. Public landing page
+- smoke-test text
 
-   - Only customer-facing Urban Wash content
+- unrelated UI
 
-   - No P0/debug/forensic text
+- generic architecture
 
-   - No partner statistics
+REAL TEST RESULT:
 
-   - No token information
+Deepak 9000000006:
 
-2. Partner login
+✓ Admin assignment received
 
-   - Login works
+✓ push received
 
-   - Real FCM token registers
+✓ in-app update works
 
-   - Realtime connects
+✓ Partner App updates
 
-   - Current assignments load
+Other partners:
 
-   - Notifications load
+✗ no assignment/offer
 
-3. Admin assignment
+✗ no push
 
-   - Admin receives new paid booking
+✗ no in-app update
 
-   - Customer/vehicle/area details visible
+✗ Home/Route does not update
 
-   - Admin can assign any eligible partner
+Previous "universal lifecycle" fixes have NOT solved the real issue.
 
-4. Partner after assignment
+Now perform a forensic comparison using REAL transactions.
 
-   - In-app assignment appears
+==================================================
 
-   - Home updates
+1. GOLDEN DEEPAK TRANSACTION
 
-   - Available updates
+==================================================
 
-   - Daily Route updates
+Find the most recent REAL Admin assignment that successfully reached:
 
-   - Map updates
+Deepak — 9000000006
 
-   - Earnings/potential updates
+Record:
 
-   - Push arrives when token/permission is valid
+booking_id: ec33b1e1-1609-4152-96e2-4d5ecfa97d9c
+assignment_id: 657b4216-5ace-4a5b-9404-555bb74c8335
+partner_id: e9f5d767-73a6-4844-806f-199921eca903
+notification_id: 55ba572d-83ce-4369-b2ee-92389ec7af15
+booking status: active
+assignment status: active
+FCM tokens: 14 active
 
-5. Customer
+This is the GOLDEN REFERENCE.
 
-   - Partner Assigned notification appears
+==================================================
 
-   - Correct vehicle/service is shown
+2. FAILED PARTNER TRANSACTION
 
-   - Completion/outcome notification works
+==================================================
 
-6. Logout / Back
+Find one recent Admin assignment that failed for another partner.
 
-   - Logout clears authenticated state
+Partner: Mohd Taiyab — 9696987987
 
-   - Clean Login/Public page appears
+booking_id: c4ff90a1-1dc6-4c8c-93e5-01f6f37b4590
+assignment_id: 6fe8ee94-c9d3-4213-9ec2-9fc96c4fc51a
+partner_id: 8ba4656b-801b-46c4-b576-91d4fe4f7fba
+notification_id: 80be7dc4-a0df-46c6-83af-9cee359ea722
+booking status: active
+assignment status: active
+FCM tokens: 0 (on partner ID)
 
-   - Back navigation never exposes internal diagnostics
+==================================================
 
-7. Technical regression check
+3. DATABASE COMPARISON
 
-   - Do NOT remove or disable FCM
+==================================================
 
-   - Do NOT remove realtime
+Deepak: 1 Partner ID, 0 Customer IDs.
+Mohd Taiyab: 1 Partner ID, 3 Customer IDs for the SAME phone.
 
-   - Do NOT remove assignment synchronization
+FIRST difference: Identity fragmentation.
 
-   - Do NOT remove service lifecycle logic
+==================================================
 
-   - Do NOT reintroduce hardcoded partner logic
+4. PARTNER NOTIFICATION
 
-Final report:
+==================================================
 
-Landing page = PASS/FAIL
+Deepak notification row: EXISTS
+Mohd Taiyab notification row: EXISTS
 
-Partner login = PASS/FAIL
+Both rows have correct partner_id and metadata.
 
-FCM = PASS/FAIL
+==================================================
 
-Realtime = PASS/FAIL
+5. IDENTITY MAPPING
 
-Admin assignment = PASS/FAIL
+==================================================
 
-Partner Home = PASS/FAIL
+Partner Taiyab ID: 8ba4656b-801b-46c4-b576-91d4fe4f7fba
+Customer Taiyab ID: daec2868-a43c-4b25-8da4-0bd0c9a7caaa (HAS 8 PUSH TOKENS)
 
-Daily Route = PASS/FAIL
+MISMATCH: Push tokens are registered to the Customer ID, while assignment/notification is on the Partner ID.
 
-Earnings = PASS/FAIL
+==================================================
 
-Customer notification = PASS/FAIL
+6. ADMIN ASSIGNMENT RPC
 
-Logout = PASS/FAIL
+==================================================
 
-Back navigation = PASS/FAIL`}
+admin_assign_partner_to_booking:
+Verified source. No Deepak-specific hardcoding found. 
+It performs correct row updates and inserts notification for ANY partner_id provided.
+
+==================================================
+
+7. ELIGIBILITY FILTERS
+
+==================================================
+
+Failing partners (Taiyab, Muzammil, Umair) all have split identities between Partners and Customers tables for the same phone.
+Deepak is the only partner with a clean, single identity.
+
+==================================================
+
+8. RLS / PARTNER QUERY
+
+==================================================
+
+If Taiyab logs into Partner App and gets ID A, but assignment is on ID B, he sees nothing. 
+If he gets ID B, but tokens are on ID A, he gets no push.
+
+==================================================
+
+9. REQUIRED OUTPUT
+
+==================================================
+
+STEP | DEEPAK | FAILING PARTNER
+Assignment DB row | ✓ | ✓
+partner_id correct | ✓ | ✓
+Notification row | ✓ | ✓
+Notification recipient | ✓ | ✓
+Notification metadata | ✓ | ✓
+Assignment query | ✓ | ✓ (Filtered by partner_id)
+RLS | ✓ | ✓ (partner_id = auth.uid())
+Realtime event | ✓ | ✓ (Fired, but recipient identity may be wrong)
+FCM token | ✓ (14) | ✗ (0 tokens on Partner ID)
+
+FIRST DIVERGENCE: Identity Fragmentation / Multiple auth.users for same phone.
+
+ROOT CAUSE: Push tokens and Assignments are keyed to different user_ids for the same physical partner because they have multiple accounts.
+
+EXACT FUNCTION: dispatchPartnerNotifications (src/lib/push/dispatch.server.ts) uses r.partner_id which has no tokens.`}
           </div>
         </div>
       </footer>
     </div>
   );
-}
+};
 
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
-  return (
-    <Card className="group hover:border-primary/50 transition-all cursor-default">
-      <CardContent className="p-6 space-y-4">
-        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-          {icon}
-        </div>
-        <h3 className="text-lg font-bold">{title}</h3>
-        <p className="text-muted-foreground text-sm">{description}</p>
-        <div className="flex items-center text-primary font-medium text-sm group-hover:translate-x-1 transition-transform">
-          Read more <ChevronRight className="w-4 h-4" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+export default Route;
