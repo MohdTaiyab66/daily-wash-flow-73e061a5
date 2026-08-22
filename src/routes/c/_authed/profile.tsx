@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { useSignOut } from "@/hooks/use-sign-out";
 import {
   LogOut,
   Car,
@@ -39,7 +40,7 @@ export const Route = createFileRoute("/c/_authed/profile")({
 
 function ProfilePage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const { signOut } = useSignOut();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const q = useQuery({
     queryKey: ["customer-profile-self"],
@@ -49,27 +50,9 @@ function ProfilePage() {
     },
   });
 
-  const signOut = async () => {
-    // 1. Tear down realtime channels while the auth token is still valid.
-    try {
-      await supabase.removeAllChannels();
-    } catch {
-      /* non-fatal — proceed with sign-out */
-    }
-    // 2. End the Supabase session.
-    await supabase.auth.signOut();
-    // 3. Clear per-device UI state and the query cache.
+  const handleSignOut = async () => {
     localStorage.removeItem("uw_customer_vehicle");
-    queryClient.cancelQueries();
-    queryClient.removeQueries();
-    queryClient.clear();
-    // 4. Verify cleanup — leftovers are a bug worth logging.
-    const leakedChannels = supabase.getChannels().length;
-    const leakedQueries = queryClient.getQueryCache().getAll().length;
-    if (leakedChannels > 0 || leakedQueries > 0) {
-      console.warn("[signOut] cleanup incomplete", { leakedChannels, leakedQueries });
-    }
-    navigate({ to: "/c" });
+    await signOut("/c");
   };
 
   const p = q.data;
@@ -171,7 +154,7 @@ function ProfilePage() {
             <AlertDialogCancel className="rounded-full">Stay signed in</AlertDialogCancel>
             <AlertDialogAction
               className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={signOut}
+              onClick={handleSignOut}
             >
               Log out
             </AlertDialogAction>
