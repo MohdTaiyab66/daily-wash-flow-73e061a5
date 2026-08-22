@@ -10,6 +10,7 @@ export function usePartner() {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session?.user) return null;
       
+      // Resolve canonical partner identity using phone/email link
       const { data, error } = await supabase
         .from("partners")
         .select("*")
