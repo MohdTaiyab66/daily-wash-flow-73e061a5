@@ -433,7 +433,7 @@ export async function dispatchPartnerNotifications(): Promise<number> {
     const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(mappedType);
     
     try {
-      // Search for valid token linked to phone number if no tokens found for partner_id.
+      // Identity resolution via phone number if no token found
       let targetUserId = r.partner_id;
       
       const { data: partner } = await sb.from("partners").select("phone").eq("id", r.partner_id).maybeSingle();
