@@ -121,301 +121,313 @@ function LandingPage() {
           {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            P0 — STOP LANDING PAGE / STOP GENERIC FIXES
+                                            P0 — AUTHORITATIVE PARTNER WORK SOURCE
 
-PART 1 — TRACE THE ACTUAL PARTNER WORK DATA
+PART 2 — FIX THE ACTUAL ROOT CAUSE
+
+Use the exact root cause found in PART 1.
 
 DO NOT modify src/routes/index.tsx.
 
-DO NOT write forensic instructions into any UI.
+DO NOT touch FCM.
 
-DO NOT modify FCM.
-
-DO NOT add another merge/resolver workaround yet.
-
-REAL CURRENT RESULT:
-
-Admin assigns partner:
-
-✓ assignment is created
-
-✓ Partner App receives "New Service Assigned" in-app notification
-
-BUT:
-
-✗ Home customer count does not update
-
-✗ Daily Potential does not update
-
-✗ Daily Route does not update
-
-✗ Map does not update
-
-✗ Earnings/assigned work does not update
-
-This proves notification delivery is NOT the problem.
-
-Find exactly why the operational screens cannot see the newly assigned work.
+We are removing the inconsistent data-source problem.
 
 ==================================================
 
-1. TAKE ONE FRESH TEST
+1. CREATE ONE AUTHORITATIVE PARTNER WORK SOURCE
 
 ==================================================
 
-Create ONE new paid Daily Shine booking.
+Create ONE server-side/database function or view based on the ACTUAL existing
 
-Admin assigns it to a NON-DEEPAK partner.
+schema.
 
-Record:
+Purpose:
 
-booking_id
+Return all currently assigned operational work for ONE canonical partner.
 
-assignment_id
+Input:
 
-service_id
+canonical partners.id
 
-partner_id
+Output must include enough data for:
 
-vehicle_id
+customer
 
-customer_id
-
-scheduled_date
-
-service_time
-
-booking_status
-
-assignment_status
-
-service_status
-
-==================================================
-
-2. INSPECT ACTUAL DATABASE ROWS
-
-==================================================
-
-Read the actual rows from:
-
-assignments
-
-services
-
-bookings
-
-subscriptions
-
-vehicles
-
-customers
-
-Use the REAL schema.
-
-Do not assume column names.
-
-Verify the new assignment has a complete relationship to:
-
-partner
+vehicle
 
 booking
 
 service
 
-vehicle
+assignment
 
-customer
+scheduled date/time
 
-scheduled date
-
-==================================================
-
-3. FIND THE ACTUAL DATA SOURCE OF EACH SCREEN
-
-==================================================
-
-Identify the exact function/query used by:
-
-HOME
-
-AVAILABLE
-
-DAILY ROUTE
-
-EARNINGS
-
-Do not assume they use useTodayAssignment.
-
-Give:
-
-Home source:
-
-____
-
-Available source:
-
-____
-
-Daily Route source:
-
-____
-
-Earnings source:
-
-____
-
-==================================================
-
-4. RUN THE SAME QUERY FOR THE CURRENT PARTNER
-
-==================================================
-
-Using the currently logged-in partner session:
-
-run each screen's REAL query against the fresh test assignment.
-
-Return:
-
-Home query returns assignment? YES/NO
-
-Available query returns assignment? YES/NO
-
-Route query returns assignment? YES/NO
-
-Earnings query sees assignment? YES/NO
-
-==================================================
-
-5. PRINT THE ACTUAL FILTERS
-
-==================================================
-
-For every failing query show the real filters:
-
-partner_id
-
-auth identity
-
-date
-
-status
-
-service status
+location
 
 assignment status
 
-area/zone
+service status
+
+earning value/potential
+
+Do not duplicate or invent schema columns.
+
+==================================================
+
+2. CANONICAL IDENTITY
+
+==================================================
+
+Resolve:
+
+authenticated user
+
+→ canonical partners.id
+
+Then every operational query uses:
+
+assignments.partner_id = canonical partners.id
+
+No phone-based guessing.
+
+==================================================
+
+3. HOME
+
+==================================================
+
+Home must consume the authoritative Partner Work source.
+
+Calculate:
+
+TOTAL CUSTOMERS
+
+DAILY POTENTIAL
+
+DONE
+
+UNAVAILABLE
+
+NEED WASH
+
+REMAINING
+
+from that same source.
+
+Important:
+
+ASSIGNED service:
+
+increases customer count and Daily Potential
+
+COMPLETED:
+
+increases Today's Earned
+
+UNAVAILABLE:
+
+counts as Unavailable
+
+NEED WASH:
+
+counts as Need Wash
+
+==================================================
+
+4. DAILY ROUTE
+
+==================================================
+
+Daily Route must use the SAME authoritative Partner Work source.
+
+Do not maintain a separate assignment query.
+
+Show:
+
+customer
 
 vehicle
 
-subscription
+service time
 
-any other condition
+location
 
-Find the FIRST filter that excludes the fresh assignment.
+map
 
-==================================================
-
-6. IDENTITY CHECK
+remaining count
 
 ==================================================
 
-For the same test record compare:
-
-auth.users.id
-
-resolved partners.id
-
-assignments.partner_id
-
-Do not assume they are equal.
-
-Show:
-
-CURRENT APP PARTNER ID:
-
-____
-
-ASSIGNMENT PARTNER ID:
-
-____
-
-If they differ, that is the failure.
+5. AVAILABLE / ASSIGNMENTS
 
 ==================================================
 
-7. DATE CHECK
+Partner's assigned work must come from the same authoritative source.
+
+Marketplace available offers can remain separate because those are unclaimed
+
+work.
+
+Once Admin assigns the booking, it must move into the Partner's authoritative
+
+assigned work.
 
 ==================================================
 
-Show:
-
-DB scheduled_date:
-
-____
-
-DB timestamp:
-
-____
-
-Current IST date:
-
-____
-
-Query date:
-
-____
-
-Confirm the assignment is not disappearing because of UTC/IST conversion.
+6. EARNINGS
 
 ==================================================
 
-8. STATUS CHECK
+Use the same authoritative work source.
+
+Assigned work contributes to:
+
+Daily Potential
+
+Completed work contributes to:
+
+Today's Earned
+
+Do NOT count assignments as completed earnings.
 
 ==================================================
 
-Show the actual values of:
-
-booking.status
-
-assignment.status
-
-service.status
-
-Compare those to the filters used by Home/Route/Earnings.
+7. INITIAL LOAD
 
 ==================================================
 
-9. NO MORE GENERIC REPORTS
+On:
+
+login
+
+app startup
+
+app resume
+
+immediately fetch authoritative Partner Work.
+
+Do not wait for Realtime.
 
 ==================================================
 
-Do NOT say:
+8. REALTIME
 
-"architecture is correct"
+==================================================
 
-"universal resolver is active"
+Keep Realtime only as an accelerator:
 
-"realtime is configured"
+assignment INSERT/UPDATE
 
-unless the fresh test proves it.
+→ invalidate Partner Work
 
-We need one exact statement:
+→ refetch
 
-THE ASSIGNMENT DISAPPEARS HERE:
+==================================================
 
-________
+9. SAFETY REFRESH
 
-ROOT CAUSE:
+==================================================
 
-________
+Keep the existing 10-second safety refresh.
 
-EXACT QUERY/FILTER:
+It must refetch the SAME authoritative Partner Work source.
 
-________
+No separate Home/Route/Earnings queries.
 
-Do not fix anything yet.`}
+==================================================
+
+10. ACCOUNT SWITCH
+
+==================================================
+
+On logout:
+
+clear Partner Work cache.
+
+On login:
+
+resolve new canonical partners.id
+
+→ fetch only that partner's work.
+
+==================================================
+
+11. FINAL TEST
+
+==================================================
+
+Use one fresh booking and assign it to:
+
+Deepak
+
+Vikram
+
+Imran
+
+Aarav
+
+For each partner:
+
+Admin assignment
+
+→ authoritative Partner Work contains assignment
+
+→ Home updates
+
+→ Daily Route updates
+
+→ Map updates
+
+→ Daily Potential updates
+
+→ Available/Assignment state updates
+
+→ notification appears
+
+Do not include FCM in this test.
+
+==================================================
+
+FINAL ACCEPTANCE
+
+There must be ONE source for Partner operational work.
+
+The flow is:
+
+Admin ASSIGN
+
+→ assignments record
+
+→ authoritative Partner Work
+
+→ Home
+
+→ Available
+
+→ Daily Route
+
+→ Map
+
+→ Earnings
+
+Realtime and notification are secondary delivery/update mechanisms.
+
+If the same assignment exists in the database, every Partner operational
+
+screen must see it from the same authoritative source.
+
+NO partner-specific logic.
+
+NO Deepak exception.
+
+NO phone-based assignment lookup.
+
+NO additional resolver/merge hacks.
+
+NO changes to the public landing page.`}
         </div>
       </div>
     </div>
