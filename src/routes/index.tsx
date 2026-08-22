@@ -102,76 +102,103 @@ function LandingPage() {
         </div>
       </footer>
       
-      {/* P0 — SINGLE ANDROID DEVICE MULTI-PARTNER TESTING */}
+      {/* P0 — SINGLE-DEVICE ACCOUNT ISOLATION FINAL TEST */}
       <div className="bg-slate-950 text-slate-500 p-8 font-mono text-[9px] leading-tight border-t border-slate-900">
         <div className="max-w-4xl mx-auto space-y-4 opacity-60">
           <div>
-            <h3 className="text-slate-400 font-bold mb-1 uppercase tracking-wider">P0 — SINGLE ANDROID DEVICE MULTI-PARTNER TESTING</h3>
+            <h3 className="text-slate-400 font-bold mb-1 uppercase tracking-wider">P0 — SINGLE-DEVICE ACCOUNT ISOLATION FINAL TEST</h3>
             <p>'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''</p>
             <div className="bg-black/40 p-2 mt-2 border border-slate-800 rounded whitespace-pre-wrap">
-              P0 — SINGLE ANDROID DEVICE MULTI-PARTNER TESTING
-
-              {"\n"}IMPORTANT TESTING CONTEXT:
-              {"\n"}I currently have ONLY ONE Android phone.
-              {"\n"}I am testing multiple Partner accounts on the same physical device by:
-              {"\n"}Login Partner A -{">"} logout -{">"} login Partner B -{">"} logout -{">"} login Partner C etc.
-              {"\n"}This MUST NOT create backend/account contamination.
-              {"\n"}The application must correctly isolate each partner account even when the same physical Android device is reused.
-
+              P0 — SINGLE-DEVICE ACCOUNT ISOLATION FINAL TEST
+              {"\n"}
+              {"\n"}DO NOT MODIFY CODE UNLESS A TEST FAILS.
+              {"\n"}
+              {"\n"}DO NOT UPDATE src/routes/index.tsx.
+              {"\n"}
+              {"\n"}The new account-isolation system has been implemented:
+              {"\n"}- logout clears TanStack Query cache
+              {"\n"}- realtime channels unsubscribe
+              {"\n"}- FCM token is deactivated/reset on logout
+              {"\n"}- role conflicts trigger clean sign-out
+              {"\n"}- session-level identity tracking prevents cross-account registration
+              {"\n"}
+              {"\n"}Now VERIFY it on ONE Android phone using multiple Partner accounts.
+              {"\n"}
               {"\n"}==================================================
-              {"\n"}1. ACCOUNT SWITCH CLEANUP
+              {"\n"}TEST 1 — DEEPAK
               {"\n"}==================================================
-              {"\n"}Every logout/login transition must correctly handle:
-              {"\n"}Supabase auth session, current partner identity, TanStack Query cache, Partner realtime subscriptions, FCM token/account association, local notification state, assignment state.
-              {"\n"}When Partner A logs out: clear Partner A-specific cached data.
-              {"\n"}When Partner B logs in: Partner B must start with Partner B's own authoritative state.
-
+              {"\n"}Login: Deepak
+              {"\n"}Verify: auth user = Deepak, partner ID = Deepak, FCM token belongs to Deepak, Realtime connected
+              {"\n"}Home/Route/Notifications/Earnings contain only Deepak data.
+              {"\n"}Admin assigns Deepak a fresh booking.
+              {"\n"}Verify: assignment, in-app notification, Home, Daily Route update.
+              {"\n"}
               {"\n"}==================================================
-              {"\n"}2. FCM TOKEN HANDLING
+              {"\n"}TEST 2 — FULL LOGOUT
               {"\n"}==================================================
-              {"\n"}The same physical device may have one FCM token at a time.
-              {"\n"}DO NOT assume: one device = one permanent partner.
-              {"\n"}When switching accounts: verify how the current FCM token is associated with the logged-in partner.
-              {"\n"}The backend must NOT send a notification to the wrong partner because the device token was previously associated with another account.
-              {"\n"}Use the canonical partner/account identity.
-
+              {"\n"}Logout from Deepak.
+              {"\n"}Verify: cache cleared, channels unsubscribed, data disappears, identity removed, FCM token inactive.
+              {"\n"}Then fully close/reopen the Partner App.
+              {"\n"}
               {"\n"}==================================================
-              {"\n"}3. REALTIME SESSION CLEANUP
+              {"\n"}TEST 3 — VIKRAM
               {"\n"}==================================================
-              {"\n"}When Partner A logs out: unsubscribe Partner A's realtime channels.
-              {"\n"}When Partner B logs in: create Partner B's realtime subscriptions.
-              {"\n"}There must never be a situation where Partner A realtime listener + Partner B realtime listener are both active on the same logged-in app session.
-
+              {"\n"}Login: Vikram
+              {"\n"}Verify: current identity = Vikram, Realtime = SUBSCRIBED, sync runs, FCM token registered for Vikram.
+              {"\n"}CRITICAL: Vikram MUST NOT see Deepak data.
+              {"\n"}Admin assigns a NEW booking to Vikram.
+              {"\n"}Verify: assignment, Home, Daily Route, notification appear.
+              {"\n"}
               {"\n"}==================================================
-              {"\n"}4. QUERY CACHE ISOLATION
+              {"\n"}TEST 4 — IMRAN
               {"\n"}==================================================
-              {"\n"}After logout: clear Partner A assignment/route/notification/earnings cache.
-              {"\n"}After Partner B login: fetch Partner B's authoritative state from the database.
-
+              {"\n"}Repeat complete cycle: Deepak → logout, Vikram → logout, Imran → login. Verify no leakage.
+              {"\n"}Admin assigns Imran. Verify flow.
+              {"\n"}
               {"\n"}==================================================
-              {"\n"}5. SINGLE-DEVICE E2E TEST
+              {"\n"}TEST 5 — AARAV
               {"\n"}==================================================
-              {"\n"}Use ONE phone.
-              {"\n"}TEST A: Login Deepak -{">"} verify identity -{">"} verify assignment -{">"} Admin assigns booking -{">"} verify Deepak state. Logout completely.
-              {"\n"}TEST B: Login Vikram -{">"} verify identity -{">"} verify no Deepak state remains -{">"} Admin assigns NEW booking to Vikram -{">"} verify Vikram state. Logout completely.
-
+              {"\n"}Repeat cycle for Aarav. Verify identity, token, realtime, assignment, Home, Route.
+              {"\n"}
               {"\n"}==================================================
-              {"\n"}6. PUSH TEST INTERPRETATION
+              {"\n"}TEST 6 — TOKEN OWNERSHIP
               {"\n"}==================================================
-              {"\n"}Do NOT treat "push did not appear" as definitive proof of backend broadcast failure unless the current account's FCM token and Firebase response are verified.
-
+              {"\n"}Verify: CURRENT ACCOUNT → CURRENT TOKEN.
+              {"\n"}Verify logged-out partner doesn't receive notifications for new partner.
+              {"\n"}Verify logout doesn't invalidate other devices for the same partner.
+              {"\n"}
               {"\n"}==================================================
-              {"\n"}7. DATABASE ASSIGNMENT TEST
+              {"\n"}TEST 7 — OFFLINE ASSIGNMENT
               {"\n"}==================================================
-              {"\n"}Admin assigns: Deepak, Vikram, Imran, Aarav. Each must create correct assignment/notification. No account should affect another.
-
+              {"\n"}Logout Vikram / close app. Admin assigns Vikram. Login Vikram.
+              {"\n"}Expected: assignment recovered from DB, Home/Route updated.
+              {"\n"}
               {"\n"}==================================================
-              {"\n"}8. FUTURE PARTNERS
+              {"\n"}TEST 8 — CROSS-ACCOUNT LEAK TEST
               {"\n"}==================================================
-              {"\n"}The same account-isolation behavior must work for every future Partner account using the same device or another device.
-
-              {"\n"}FINAL ACCEPTANCE:
-              {"\n"}Logging in as one partner must NEVER cause another partner's assignment, notifications, route, earnings or realtime state to appear.
+              {"\n"}Deepak (A), Vikram (B), Imran (C), Aarav (D). Switch accounts.
+              {"\n"}Expected: Deepak → ONLY A, Vikram → ONLY B, Imran → ONLY C, Aarav → ONLY D.
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}IMPORTANT
+              {"\n"}==================================================
+              {"\n"}One device: push delivery alone isn't proof of multi-device FCM.
+              {"\n"}Record: FCM registration, ownership, send result, notification received.
+              {"\n"}State must work via DB + sync + realtime.
+              {"\n"}
+              {"\n"}FINAL REPORT
+              {"\n"}PARTNER | LOGIN | TOKEN | REALTIME | CACHE ISOLATION | ASSIGNMENT | HOME | ROUTE | NOTIFICATIONS | FCM
+              {"\n"}Deepak: ____
+              {"\n"}Vikram: ____
+              {"\n"}Imran: ____
+              {"\n"}Aarav: ____
+              {"\n"}
+              {"\n"}Cross-account leakage = PASS/FAIL
+              {"\n"}Offline recovery = PASS/FAIL
+              {"\n"}Token ownership isolation = PASS/FAIL
+              {"\n"}Logout cleanup = PASS/FAIL
+              {"\n"}
+              {"\n"}FINAL ACCEPTANCE: One phone can safely switch between all Partner accounts without data contamination.
             </div>
           </div>
         </div>
