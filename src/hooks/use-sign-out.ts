@@ -17,10 +17,17 @@ export function useSignOut() {
         await stopFcm(userId);
       }
 
-      // 2. Sign out from Supabase
+      // 2. Tear down realtime channels while the auth token is still valid.
+      try {
+        await supabase.removeAllChannels();
+      } catch {
+        /* proceed with sign-out */
+      }
+
+      // 3. Sign out from Supabase
       await supabase.auth.signOut();
 
-      // 3. Clear all cached queries to prevent data contamination
+      // 4. Clear all cached queries to prevent data contamination
       queryClient.clear();
 
       // 4. Force reload to ensure all stores and listeners are reset
