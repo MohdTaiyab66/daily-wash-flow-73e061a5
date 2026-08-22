@@ -88,167 +88,271 @@ export const Route = () => {
             {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            P0 — DEEPAK VS OTHER PARTNERS FORENSIC AUDIT — PART 1
+                                            P0 — DEEPAK PARITY UNIVERSAL FIX — PART 2
 
-STOP changing:
+Use the EXACT first divergence discovered in PART 1.
 
-- landing page
-
-- smoke-test text
-
-- unrelated UI
-
-- generic architecture
-
-REAL TEST RESULT:
-
-Deepak 9000000006:
-
-✓ Admin assignment received
-
-✓ push received
-
-✓ in-app update works
-
-✓ Partner App updates
-
-Other partners:
-
-✗ no assignment/offer
-
-✗ no push
-
-✗ no in-app update
-
-✗ Home/Route does not update
-
-Previous "universal lifecycle" fixes have NOT solved the real issue.
-
-Now perform a forensic comparison using REAL transactions.
+Do not create a Deepak-specific solution.
 
 ==================================================
 
-1. GOLDEN DEEPAK TRANSACTION
+1. FIX THE COMMON LOGIC
 
 ==================================================
 
-Find the most recent REAL Admin assignment that successfully reached:
+The selected Admin partner must always follow:
 
-Deepak — 9000000006
+ADMIN ASSIGN
 
-Record:
+→ DATABASE ASSIGNMENT
 
-booking_id: ec33b1e1-1609-4152-96e2-4d5ecfa97d9c
-assignment_id: 657b4216-5ace-4a5b-9404-555bb74c8335
-partner_id: e9f5d767-73a6-4844-806f-199921eca903
-notification_id: 55ba572d-83ce-4369-b2ee-92389ec7af15
-booking status: active
-assignment status: active
-FCM tokens: 14 active
+→ PARTNER NOTIFICATION
 
-This is the GOLDEN REFERENCE.
+→ REALTIME EVENT
 
-==================================================
+→ PARTNER QUERY REFRESH
 
-2. FAILED PARTNER TRANSACTION
+→ PARTNER APP UPDATE
 
-==================================================
+→ FCM PUSH
 
-Find one recent Admin assignment that failed for another partner.
+The same path must work for every valid partner.
 
-Partner: Mohd Taiyab — 9696987987
+No dependency on:
 
-booking_id: c4ff90a1-1dc6-4c8c-93e5-01f6f37b4590
-assignment_id: 6fe8ee94-c9d3-4213-9ec2-9fc96c4fc51a
-partner_id: 8ba4656b-801b-46c4-b576-91d4fe4f7fba
-notification_id: 80be7dc4-a0df-46c6-83af-9cee359ea722
-booking status: active
-assignment status: active
-FCM tokens: 0 (on partner ID)
+Deepak
+
+trial/real
+
+marketplace
+
+online state
+
+FCM token
+
+previous login
 
 ==================================================
 
-3. DATABASE COMPARISON
+2. PARTNER NOTIFICATION
 
 ==================================================
 
-Deepak: 1 Partner ID, 0 Customer IDs.
-Mohd Taiyab: 1 Partner ID, 3 Customer IDs for the SAME phone.
+When Admin assigns Partner X:
 
-FIRST difference: Identity fragmentation.
+create partner_notifications for Partner X with:
 
-==================================================
+partner_id
 
-4. PARTNER NOTIFICATION
+booking_id
 
-==================================================
+service_id
 
-Deepak notification row: EXISTS
-Mohd Taiyab notification row: EXISTS
+assignment_id
 
-Both rows have correct partner_id and metadata.
+vehicle_id
 
-==================================================
-
-5. IDENTITY MAPPING
+The recipient must resolve using the canonical partner identity.
 
 ==================================================
 
-Partner Taiyab ID: 8ba4656b-801b-46c4-b576-91d4fe4f7fba
-Customer Taiyab ID: daec2868-a43c-4b25-8da4-0bd0c9a7caaa (HAS 8 PUSH TOKENS)
-
-MISMATCH: Push tokens are registered to the Customer ID, while assignment/notification is on the Partner ID.
+3. REALTIME
 
 ==================================================
 
-6. ADMIN ASSIGNMENT RPC
+After assignment:
+
+emit new_assignment with:
+
+partner_id
+
+assignment_id
+
+booking_id
+
+service_id
+
+vehicle_id
+
+Partner App must receive it.
+
+Then invalidate/refetch the actual queries used by:
+
+Home
+
+Available
+
+Daily Route
+
+Notifications
+
+Earnings
 
 ==================================================
 
-admin_assign_partner_to_booking:
-Verified source. No Deepak-specific hardcoding found. 
-It performs correct row updates and inserts notification for ANY partner_id provided.
+4. DATABASE IS SOURCE OF TRUTH
 
 ==================================================
 
-7. ELIGIBILITY FILTERS
+Push is only an alert.
+
+Even if FCM fails:
+
+assignment MUST still appear in:
+
+Home
+
+Available
+
+Daily Route
+
+Notifications
+
+through database + initial sync + realtime.
 
 ==================================================
 
-Failing partners (Taiyab, Muzammil, Umair) all have split identities between Partners and Customers tables for the same phone.
-Deepak is the only partner with a clean, single identity.
+5. LOGIN / OFFLINE RECOVERY
 
 ==================================================
 
-8. RLS / PARTNER QUERY
+If a partner was offline when Admin assigned:
+
+on next login/open:
+
+fetch current assignments
+
+fetch notifications
+
+fetch route
+
+fetch earnings
+
+The partner must recover the assignment without needing the original push or
+
+Realtime event.
 
 ==================================================
 
-If Taiyab logs into Partner App and gets ID A, but assignment is on ID B, he sees nothing. 
-If he gets ID B, but tokens are on ID A, he gets no push.
+6. FCM
 
 ==================================================
 
-9. REQUIRED OUTPUT
+If a valid FCM token exists:
+
+send push.
+
+Verify:
+
+token
+
+active
+
+app_type = partner
+
+Firebase project
+
+FCM response
+
+FCM failure must NOT roll back the assignment.
 
 ==================================================
 
-STEP | DEEPAK | FAILING PARTNER
-Assignment DB row | ✓ | ✓
-partner_id correct | ✓ | ✓
-Notification row | ✓ | ✓
-Notification recipient | ✓ | ✓
-Notification metadata | ✓ | ✓
-Assignment query | ✓ | ✓ (Filtered by partner_id)
-RLS | ✓ | ✓ (partner_id = auth.uid())
-Realtime event | ✓ | ✓ (Fired, but recipient identity may be wrong)
-FCM token | ✓ (14) | ✗ (0 tokens on Partner ID)
+7. NO SPECIAL CASE
 
-FIRST DIVERGENCE: Identity Fragmentation / Multiple auth.users for same phone.
+==================================================
 
-ROOT CAUSE: Push tokens and Assignments are keyed to different user_ids for the same physical partner because they have multiple accounts.
+Search entire project for:
 
-EXACT FUNCTION: dispatchPartnerNotifications (src/lib/push/dispatch.server.ts) uses r.partner_id which has no tokens.`}
+9000000006
+
+Deepak
+
+deepak
+
+Also search:
+
+TRIAL-FCM
+
+is_trial
+
+partner-specific conditions
+
+Remove any technical special cases.
+
+==================================================
+
+8. REAL MULTI-PARTNER E2E
+
+==================================================
+
+Create fresh assignments for:
+
+Deepak
+
+Partner A
+
+Partner B
+
+Partner C
+
+At least 3 must be NON-DEEPAK partners.
+
+For each verify:
+
+assignment DB
+
+partner notification
+
+realtime
+
+in-app notification
+
+Home
+
+Available
+
+Daily Route
+
+Map
+
+Earnings
+
+FCM push
+
+==================================================
+
+9. FINAL ACCEPTANCE
+
+ALL tested partners must behave identically:
+
+Admin assigns
+
+→ assignment created
+
+→ notification created
+
+→ realtime delivered
+
+→ Partner App updates
+
+→ Home updates
+
+→ Daily Route updates
+
+→ earnings update
+
+→ push works when token is valid
+
+Do not declare success from code inspection.
+
+The fix is complete only when at least 3 NON-DEEPAK partners successfully
+
+receive Admin assignments and see them in the Partner App on real devices.
+
+Also confirm that the same implementation will work for every existing and
+
+future partner account.`}
           </div>
         </div>
       </footer>

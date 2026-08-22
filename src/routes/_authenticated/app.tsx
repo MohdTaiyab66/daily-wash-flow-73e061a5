@@ -87,11 +87,21 @@ function TopBar() {
             const notif = payload.new as any;
             qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
             
-            if (notif?.type === "new_assignment" || notif?.type === "assignment_new" || notif?.type === "new_assignments") {
+            // UNIVERSAL P0 FIX: Exhaustive invalidation for all possible assignment events.
+            // This ensures Home, Route, and Earnings are always up-to-date after an Admin assignment.
+            if (
+              notif?.type === "new_assignment" || 
+              notif?.type === "assignment_new" || 
+              notif?.type === "new_assignments" || 
+              notif?.type === "partner_assigned" ||
+              notif?.type === "daily_shine_offer"
+            ) {
               qc.invalidateQueries({ queryKey: ["today-assignment"] });
               qc.invalidateQueries({ queryKey: ["route-today"] });
               qc.invalidateQueries({ queryKey: ["partner-open-offers-home"] });
               qc.invalidateQueries({ queryKey: ["partner-booking-requests"] });
+              qc.invalidateQueries({ queryKey: ["partner-services"] });
+              qc.invalidateQueries({ queryKey: ["partner-earnings"] });
             }
           })
         .subscribe((status) => {
@@ -101,6 +111,7 @@ function TopBar() {
             qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
             qc.invalidateQueries({ queryKey: ["partner-services"] });
             qc.invalidateQueries({ queryKey: ["partner-earnings"] });
+            qc.invalidateQueries({ queryKey: ["partner-open-offers-home"] });
           }
         });
 

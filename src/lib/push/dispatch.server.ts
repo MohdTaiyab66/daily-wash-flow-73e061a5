@@ -103,7 +103,6 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
     
     if (claimError || !claim?.id) {
       if (claimError?.code === "23505") {
-        // Idempotency check: already claimed by another process (e.g., cron vs immediate)
         return false;
       }
       return false;
@@ -122,7 +121,6 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
         sb,
         partnerId: r.partner_id,
         incentive: Number((r as any).incentive || 0),
-        // [PARTNER-BOOKING-CONTEXT:EARNINGS_FORMULA] uses 26 days default
         startDate: (r as any).subscription_start_date ?? null,
         renewalDate: (r as any).subscription_renewal_date ?? null,
       }),
@@ -136,7 +134,6 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
 
     const title = monthly.display;
     const body = `${r.vehicle_category ?? "Vehicle"}${r.area ? ` • ${r.area}` : ""} • ${distance.display}`;
-
 
     const data: Record<string, string> = {
       type: "daily_shine_offer",
@@ -158,8 +155,29 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
     if (r.vehicle_category) data.vehicle = r.vehicle_category;
 
     try {
+      // UNIVERSAL P0 FIX: Identity fragmentation resolution for Marketplace Offers.
+      let targetUserId = r.partner_id;
+      const { data: partner } = await sb.from("partners").select("phone").eq("id", r.partner_id).maybeSingle();
+      if (partner?.phone) {
+        const { data: tokens } = await sb.from("push_tokens").select("id").eq("user_id", r.partner_id).is("invalid_at", null).limit(1);
+        if (!tokens || tokens.length === 0) {
+          const { data: others } = await sb.from("partners").select("id").eq("phone", partner.phone).neq("id", r.partner_id);
+          const otherPartnerIds = (others || []).map((p: any) => p.id);
+          const { data: customers } = await sb.from("customer_profiles").select("id").eq("phone", partner.phone);
+          const customerIds = (customers || []).map((c: any) => c.id);
+          const allIdentityIds = [...new Set([...otherPartnerIds, ...customerIds])];
+          
+          if (allIdentityIds.length > 0) {
+            const { data: altTokens } = await sb.from("push_tokens").select("user_id").in("user_id", allIdentityIds).is("invalid_at", null).limit(1);
+            if (altTokens && altTokens.length > 0) {
+              targetUserId = altTokens[0].user_id;
+            }
+          }
+        }
+      }
+
       const result = await sendOfferPush({
-        userId: r.partner_id,
+        userId: targetUserId,
         title,
         body,
         data,
@@ -199,15 +217,12 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
           meta: { error: e?.message ?? String(e), claimed_event_id: claim.id, claimed_by: claimedBy },
         })
         .eq("id", claim.id);
-      if (failLogError) console.warn("Failed to log push failure", failLogError);
       return false;
     }
   });
 
   const results = await Promise.all(fanoutPromises);
   dispatched = results.filter(Boolean).length;
-  
-  console.log(`[BOOKING-PUSH:09] FANOUT_COMPLETE total_dispatched=${dispatched}`);
   return dispatched;
 }
 
@@ -410,28 +425,58 @@ export async function dispatchPartnerNotifications(): Promise<number> {
   for (const r of rows ?? []) {
     const type = String(r.type ?? "");
     const canonicalTypeMap: Record<string, string> = {
-      "new_assignments": "new_booking",
-      "assignment_created": "new_booking",
-      "partner_assigned": "new_booking",
+      "new_assignments": "new_assignment",
+      "assignment_created": "new_assignment",
+      "partner_assigned": "new_assignment",
     };
     const mappedType = canonicalTypeMap[type] || type;
     const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(mappedType);
     
     try {
+      // UNIVERSAL P0 FIX: Search for ANY valid token linked to this phone number
+      // if no tokens are found for the specific partner_id.
+      // This solves identity fragmentation where tokens are trapped on duplicate customer accounts.
+      let targetUserId = r.partner_id;
+      
+      const { data: partner } = await sb.from("partners").select("phone").eq("id", r.partner_id).maybeSingle();
+      if (partner?.phone) {
+        const { data: tokens } = await sb.from("push_tokens").select("user_id").eq("user_id", r.partner_id).is("invalid_at", null).limit(1);
+        
+        if (!tokens || tokens.length === 0) {
+          // No tokens on partner ID. Look for tokens on other identities with same phone.
+          const { data: others } = await sb.from("partners").select("id").eq("phone", partner.phone).neq("id", r.partner_id);
+          const otherPartnerIds = (others || []).map((p: any) => p.id);
+          
+          const { data: customers } = await sb.from("customer_profiles").select("id").eq("phone", partner.phone);
+          const customerIds = (customers || []).map((c: any) => c.id);
+          
+          const allIdentityIds = [...new Set([...otherPartnerIds, ...customerIds])];
+          
+          if (allIdentityIds.length > 0) {
+            const { data: altTokens } = await sb
+              .from("push_tokens")
+              .select("user_id")
+              .in("user_id", allIdentityIds)
+              .is("invalid_at", null)
+              .limit(1);
+            
+            if (altTokens && altTokens.length > 0) {
+              targetUserId = altTokens[0].user_id;
+            }
+          }
+        }
+      }
+
       const result = await sendOfferPush({
-        userId: r.partner_id,
+        userId: targetUserId, // Use resolved identity
         title: r.title,
         body: r.body ?? "",
         data: {
           type: mappedType,
           link: r.link ?? (isAssignment ? "/app/assignments" : ""),
-          // REQUIRED CONTRACT — UrbanwashMessagingService.postAssignment()
-          // or postOffer() returns early unless broadcast_id and action_token
-          // are present.
           broadcast_id: String(r.id),
           action_token: String(r.id),
           offer_id: String(r.id),
-          // Kotlin uses these to key the notification and deep link.
           ...(r.metadata?.assignment_id ? { assignment_id: String(r.metadata.assignment_id) } : {}),
           ...(r.metadata?.service_id ? { service_id: String(r.metadata.service_id) } : {}),
         },
@@ -525,8 +570,29 @@ export async function dispatchAssignmentReleased(pAssignmentId: string, pCancell
         action_token: String(o.id),
       };
 
+      // UNIVERSAL P0 FIX: Identity fragmentation resolution for Release Pushes.
+      let targetUserId = o.partner_id;
+      const { data: partner } = await sb.from("partners").select("phone").eq("id", o.partner_id).maybeSingle();
+      if (partner?.phone) {
+        const { data: tokens } = await sb.from("push_tokens").select("id").eq("user_id", o.partner_id).is("invalid_at", null).limit(1);
+        if (!tokens || tokens.length === 0) {
+          const { data: others } = await sb.from("partners").select("id").eq("phone", partner.phone).neq("id", o.partner_id);
+          const otherPartnerIds = (others || []).map((p: any) => p.id);
+          const { data: customers } = await sb.from("customer_profiles").select("id").eq("phone", partner.phone);
+          const customerIds = (customers || []).map((c: any) => c.id);
+          const allIdentityIds = [...new Set([...otherPartnerIds, ...customerIds])];
+          
+          if (allIdentityIds.length > 0) {
+            const { data: altTokens } = await sb.from("push_tokens").select("user_id").in("user_id", allIdentityIds).is("invalid_at", null).limit(1);
+            if (altTokens && altTokens.length > 0) {
+              targetUserId = altTokens[0].user_id;
+            }
+          }
+        }
+      }
+
       const result = await sendOfferPush({
-        userId: o.partner_id,
+        userId: targetUserId,
         title,
         body,
         data: dataPayload,
@@ -696,8 +762,29 @@ export async function dispatchBookingPushes(bookings: any[]): Promise<number> {
           action_token: String(o.id),
         };
 
+        // UNIVERSAL P0 FIX: Identity fragmentation resolution for Booking Pushes.
+        let targetUserId = o.partner_id;
+        const { data: partner } = await sb.from("partners").select("phone").eq("id", o.partner_id).maybeSingle();
+        if (partner?.phone) {
+          const { data: tokens } = await sb.from("push_tokens").select("id").eq("user_id", o.partner_id).is("invalid_at", null).limit(1);
+          if (!tokens || tokens.length === 0) {
+            const { data: others } = await sb.from("partners").select("id").eq("phone", partner.phone).neq("id", o.partner_id);
+            const otherPartnerIds = (others || []).map((p: any) => p.id);
+            const { data: customers } = await sb.from("customer_profiles").select("id").eq("phone", partner.phone);
+            const customerIds = (customers || []).map((c: any) => c.id);
+            const allIdentityIds = [...new Set([...otherPartnerIds, ...customerIds])];
+            
+            if (allIdentityIds.length > 0) {
+              const { data: altTokens } = await sb.from("push_tokens").select("user_id").in("user_id", allIdentityIds).is("invalid_at", null).limit(1);
+              if (altTokens && altTokens.length > 0) {
+                targetUserId = altTokens[0].user_id;
+              }
+            }
+          }
+        }
+
         const result = await sendOfferPush({
-          userId: o.partner_id,
+          userId: targetUserId,
           title,
           body,
           data: dataPayload,

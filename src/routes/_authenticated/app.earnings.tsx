@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { getTodayIST, formatBusinessDate } from "@/lib/date-utils";
 import { PartnerShell } from "@/components/partner/PartnerShell";
+import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 
 const RATE = 17;
 
@@ -32,6 +33,12 @@ function startOfWeek(d: Date) {
 function EarningsPage() {
   const { t } = useI18n();
   const [tab, setTab] = useState<"today" | "week" | "month" | "lifetime">("week");
+
+  useRealtimeInvalidation(["services", "assignments", "partner_notifications", "wallet_ledger"], [
+    ["earnings-v3"],
+    ["today-assignment-for-earnings"],
+    ["today-assignment"]
+  ]);
 
   const { data: todayQuery } = useQuery({
     queryKey: ["today-assignment-for-earnings"],
