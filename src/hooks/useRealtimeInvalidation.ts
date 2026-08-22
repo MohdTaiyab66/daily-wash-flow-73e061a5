@@ -53,7 +53,6 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
     };
     
     const onOnline = () => {
-      console.log(`[PARTNER-REALTIME] [NETWORK] Back online, refreshing`);
       refresh("NETWORK_ONLINE");
     };
     
