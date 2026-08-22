@@ -14,7 +14,7 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
   useEffect(() => {
     if (tables.length === 0) return;
     
-    console.log(`[PARTNER-REALTIME] [useRealtimeInvalidation] Mounting for tables: ${tableKey}`);
+    // Set up realtime channel for tables
     
     const channel = supabase.channel(`realtime-inv-${Math.random().toString(36).slice(2, 8)}`);
     
