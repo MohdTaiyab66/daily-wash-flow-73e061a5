@@ -55,6 +55,13 @@ function AssignmentsPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
 
+  useRealtimeInvalidation(["assignments", "partner_notifications", "services"], [
+    ["today-assignment"],
+    ["available-work-summary"],
+    ["me-partner-builder"],
+    ["assignment-settings-v3"]
+  ]);
+
   // Mondays are always off
   const countServiceDays = (calendarDays: number, startDate = new Date()) => {
     let count = 0;
