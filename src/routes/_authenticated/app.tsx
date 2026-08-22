@@ -108,6 +108,8 @@ function TopBar() {
     let cancelled = false;
     (async () => {
       const { data: u, error } = await supabase.auth.getUser();
+      if (error || !u.user || cancelled) return;
+
       // Resolve canonical partner identity for realtime sync
       const { data: me } = await supabase
         .from("partners")
