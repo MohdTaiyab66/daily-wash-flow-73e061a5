@@ -239,7 +239,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
 
     // Fallback (offline / server fn unreachable)
     try {
-      console.log(`[CUSTOMER-FCM-REGISTRATION] falling back to direct Supabase upsert...`);
+      // Direct Supabase fallback
       const { error } = await supabase.from("push_tokens").upsert(
         {
           user_id: userId,
