@@ -59,7 +59,8 @@ function HomePage() {
     ["partner-open-offers-home"],
     ["available-work-summary", partner?.home_area],
     ["partner-notifications-unread"],
-    ["partner-earnings"]
+    ["partner-earnings"],
+    ["history"]
   ]);
 
   // Ensure we refetch on mount to clear any stale cache from previous sessions
