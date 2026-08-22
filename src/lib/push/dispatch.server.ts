@@ -155,7 +155,7 @@ export async function dispatchPendingOffers(claimedBy = "offer-push-dispatch", p
     if (r.vehicle_category) data.vehicle = r.vehicle_category;
 
     try {
-      // UNIVERSAL P0 FIX: Identity fragmentation resolution for Marketplace Offers.
+      // Identity fragmentation resolution for Marketplace Offers.
       let targetUserId = r.partner_id;
       const { data: partner } = await sb.from("partners").select("phone").eq("id", r.partner_id).maybeSingle();
       if (partner?.phone) {
@@ -433,9 +433,7 @@ export async function dispatchPartnerNotifications(): Promise<number> {
     const isAssignment = PARTNER_ASSIGNMENT_TYPES.has(mappedType);
     
     try {
-      // UNIVERSAL P0 FIX: Search for ANY valid token linked to this phone number
-      // if no tokens are found for the specific partner_id.
-      // This solves identity fragmentation where tokens are trapped on duplicate customer accounts.
+      // Search for valid token linked to phone number if no tokens found for partner_id.
       let targetUserId = r.partner_id;
       
       const { data: partner } = await sb.from("partners").select("phone").eq("id", r.partner_id).maybeSingle();
