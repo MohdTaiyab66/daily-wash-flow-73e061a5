@@ -38,7 +38,17 @@ function RoutePage() {
 
   useRealtimeInvalidation(
     ["services", "assignments", "partner_notifications", "customers", "vehicles", "wallet_ledger"],
-    [["route-today"], ["today-assignment"], ["partner-notifications-unread"], ["earnings-v3"], ["today-assignment-for-earnings"]]
+    [
+      ["route-today"],
+      ["today-assignment"],
+      ["partner-notifications-unread"],
+      ["earnings-v3"],
+      ["today-assignment-for-earnings"],
+      ["partner-open-offers-home"],
+      ["partner-booking-requests"],
+      ["partner-services"],
+      ["partner-earnings"]
+    ]
   );
   
   const todayDateStr = getTodayIST();
