@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { getTodayIST, formatBusinessDate } from "@/lib/date-utils";
 import { PartnerShell } from "@/components/partner/PartnerShell";
+import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 
 const RATE = 17;
 
