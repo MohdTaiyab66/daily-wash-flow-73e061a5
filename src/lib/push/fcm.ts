@@ -364,7 +364,15 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
     } catch { /* noop */ }
     await recordLastFcm(event, "System Notification → tap", true);
     const data = (event.notification?.data ?? {}) as Record<string, unknown>;
+    const type = (data.type as string) || "default";
+    
+    // P0 ARCHITECTURE FIX: Also trigger refresh on tap to ensure we have latest state after coming from background.
+    if (type.includes('assignment') || type.includes('booking') || type === 'new_assignment') {
+      window.dispatchEvent(new CustomEvent('urbanwash:assignment-refresh', { detail: data }));
+    }
+
     const link = typeof data.link === "string" ? data.link : null;
+
     if (isOffer(data)) {
       await recordEvent("opened", data, { action: event.actionId });
       pendingDeepLink = data;
