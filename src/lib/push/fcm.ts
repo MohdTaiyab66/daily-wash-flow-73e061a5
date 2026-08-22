@@ -152,7 +152,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   
   // Note: Permission denial does NOT block token retrieval for diagnostics
   if (perm?.receive !== "granted") {
-    console.warn(`[PARTNER-FCM] permission status: ${perm?.receive || 'unknown'}`);
+    // Log missing permissions for diagnostics
   }
 
   // 2) Notification channels (Android)
