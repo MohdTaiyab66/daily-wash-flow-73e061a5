@@ -9,9 +9,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2, Clock, IndianRupee, Map as MapIcon, Car, Users, Lock } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
-
 import { prepareStaffLogin, requestStaffOtp } from "@/lib/staff-auth.functions";
 import { PARTNER_APP_VERSION } from "@/lib/buildInfo";
+import { useSignOut } from "@/hooks/use-sign-out";
 
 export const Route = createFileRoute("/auth")({
   ssr: true,
@@ -41,6 +41,7 @@ function haptic(pattern: number | number[] = 12) {
 function AuthPage() {
   const navigate = useNavigate();
   const { redirect } = Route.useSearch();
+  const { signOut } = useSignOut();
   const nextRoute = redirect?.startsWith("/admin") ? redirect : redirect?.startsWith("/app") ? redirect : "/app";
   const isAdminLogin = nextRoute.startsWith("/admin");
 
@@ -67,12 +68,29 @@ function AuthPage() {
   useEffect(() => {
     (async () => {
       const { data: sess } = await supabase.auth.getSession();
-      const email = sess.session?.user.email || "";
+      const user = sess.session?.user;
+      const email = user?.email || "";
       if (!email) return;
-      if (isAdminLogin && email.endsWith("@admin.urbanwash.app")) navigate({ to: nextRoute as any });
-      else if (!isAdminLogin && email.endsWith("@partner.urbanwash.app")) navigate({ to: nextRoute as any });
+
+      const isCurrentAdmin = email.endsWith("@admin.urbanwash.app");
+      const isCurrentPartner = email.endsWith("@partner.urbanwash.app");
+
+      // If user is already logged in with a DIFFERENT role than requested, sign out first.
+      if (isAdminLogin && isCurrentPartner) {
+        console.log("[AUTH-ISOLATION] Logged in as partner, but admin login requested. Signing out...");
+        await signOut("/auth?redirect=" + encodeURIComponent(redirect || ""));
+        return;
+      }
+      if (!isAdminLogin && isCurrentAdmin) {
+        console.log("[AUTH-ISOLATION] Logged in as admin, but partner login requested. Signing out...");
+        await signOut("/auth?redirect=" + encodeURIComponent(redirect || ""));
+        return;
+      }
+
+      if (isAdminLogin && isCurrentAdmin) navigate({ to: nextRoute as any });
+      else if (!isAdminLogin && isCurrentPartner) navigate({ to: nextRoute as any });
     })();
-  }, [isAdminLogin, navigate, nextRoute]);
+  }, [isAdminLogin, navigate, nextRoute, redirect]);
 
   // Web OTP API — SMS auto-fill on Android Chrome
   useEffect(() => {

@@ -80,7 +80,7 @@ function TopBar() {
       const { data: u, error } = await supabase.auth.getUser();
       if (error || !u.user || cancelled) return;
       const partnerId = u.user.id;
-      channel = supabase
+      (window as any)._supabase_partner_channel = channel = supabase
         .channel(`partner-notif-${partnerId}`)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "partner_notifications", filter: `partner_id=eq.${partnerId}` },
           (payload) => {
@@ -120,8 +120,8 @@ function TopBar() {
     return () => { 
       cancelled = true; 
       if (channel) {
-        
         supabase.removeChannel(channel);
+        (window as any)._supabase_partner_channel = null;
       }
     };
   }, [qc, partner?.id]);
