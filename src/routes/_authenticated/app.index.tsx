@@ -99,10 +99,8 @@ function HomePage() {
     refetchInterval: 30000,
   });
 
-  // MISSED-WORK RECOVERY — the marketplace (database) is the source of truth,
-  // never FCM history. This runs on every mount/login and surfaces still-open,
-  // unclaimed opportunities the partner is currently eligible for, including
-  // ones broadcast while they were logged out.
+  // Recover marketplace opportunities (new_booking + assignment_released).
+  // This runs on mount/login and surfaces open, unclaimed opportunities.
   const fetchOpenOffers = useServerFn(getPartnerOpenOffers);
   const { data: openOffers = [] } = useQuery<any[]>({
     queryKey: ["partner-open-offers-home"],
