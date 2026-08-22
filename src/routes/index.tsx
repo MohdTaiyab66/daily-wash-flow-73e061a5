@@ -102,103 +102,135 @@ function LandingPage() {
         </div>
       </footer>
       
-      {/* P0 — SINGLE-DEVICE ACCOUNT ISOLATION FINAL TEST */}
+      {/* URBAN WASH — P0 FINAL ARCHITECTURE */}
       <div className="bg-slate-950 text-slate-500 p-8 font-mono text-[9px] leading-tight border-t border-slate-900">
         <div className="max-w-4xl mx-auto space-y-4 opacity-60">
           <div>
-            <h3 className="text-slate-400 font-bold mb-1 uppercase tracking-wider">P0 — SINGLE-DEVICE ACCOUNT ISOLATION FINAL TEST</h3>
+            <h3 className="text-slate-400 font-bold mb-1 uppercase tracking-wider">URBAN WASH — P0 FINAL ARCHITECTURE</h3>
             <p>'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''</p>
             <div className="bg-black/40 p-2 mt-2 border border-slate-800 rounded whitespace-pre-wrap">
-              P0 — SINGLE-DEVICE ACCOUNT ISOLATION FINAL TEST
+              URBAN WASH — P0 FINAL ARCHITECTURE
               {"\n"}
-              {"\n"}DO NOT MODIFY CODE UNLESS A TEST FAILS.
+              {"\n"}MAKE ADMIN ASSIGNMENT WORK FOR EVERY PARTNER
               {"\n"}
-              {"\n"}DO NOT UPDATE src/routes/index.tsx.
+              {"\n"}STOP trying to solve Admin assignment delivery primarily through FCM.
               {"\n"}
-              {"\n"}The new account-isolation system has been implemented:
-              {"\n"}- logout clears TanStack Query cache
-              {"\n"}- realtime channels unsubscribe
-              {"\n"}- FCM token is deactivated/reset on logout
-              {"\n"}- role conflicts trigger clean sign-out
-              {"\n"}- session-level identity tracking prevents cross-account registration
+              {"\n"}The current real-world problem is:
+              {"\n"}Deepak receives Admin assignments and push.
+              {"\n"}Other partners often receive nothing.
               {"\n"}
-              {"\n"}Now VERIFY it on ONE Android phone using multiple Partner accounts.
-              {"\n"}
-              {"\n"}==================================================
-              {"\n"}TEST 1 — DEEPAK
-              {"\n"}==================================================
-              {"\n"}Login: Deepak
-              {"\n"}Verify: auth user = Deepak, partner ID = Deepak, FCM token belongs to Deepak, Realtime connected
-              {"\n"}Home/Route/Notifications/Earnings contain only Deepak data.
-              {"\n"}Admin assigns Deepak a fresh booking.
-              {"\n"}Verify: assignment, in-app notification, Home, Daily Route update.
+              {"\n"}I want ONE simple authoritative system that works identically for:
+              {"\n"}- all existing Real partners
+              {"\n"}- all existing Trial partners
+              {"\n"}- all future partners
               {"\n"}
               {"\n"}==================================================
-              {"\n"}TEST 2 — FULL LOGOUT
+              {"\n"}1. DATABASE ASSIGNMENT IS THE SOURCE OF TRUTH
               {"\n"}==================================================
-              {"\n"}Logout from Deepak.
-              {"\n"}Verify: cache cleared, channels unsubscribed, data disappears, identity removed, FCM token inactive.
-              {"\n"}Then fully close/reopen the Partner App.
+              {"\n"}When Admin clicks: ASSIGN PARTNER
+              {"\n"}the ONLY authoritative action is: booking → assignment created → assignment.partner_id = selected canonical partner ID
+              {"\n"}Do NOT require: FCM, Realtime, push token, online status, marketplace, notification delivery for the assignment itself.
+              {"\n"}If push fails, assignment must STILL be created.
               {"\n"}
               {"\n"}==================================================
-              {"\n"}TEST 3 — VIKRAM
+              {"\n"}2. PARTNER APP MUST ALWAYS FETCH ITS OWN ASSIGNMENTS
               {"\n"}==================================================
-              {"\n"}Login: Vikram
-              {"\n"}Verify: current identity = Vikram, Realtime = SUBSCRIBED, sync runs, FCM token registered for Vikram.
-              {"\n"}CRITICAL: Vikram MUST NOT see Deepak data.
-              {"\n"}Admin assigns a NEW booking to Vikram.
-              {"\n"}Verify: assignment, Home, Daily Route, notification appear.
+              {"\n"}On Partner login/app startup:
+              {"\n"}1. Resolve canonical partner ID.
+              {"\n"}2. Query all active assignments where: assignments.partner_id = current partner ID
+              {"\n"}3. Load notifications, today's route, earnings.
+              {"\n"}This must happen EVERY time the app starts or partner logs in.
+              {"\n"}Do not rely on receiving a previous realtime event.
               {"\n"}
               {"\n"}==================================================
-              {"\n"}TEST 4 — IMRAN
+              {"\n"}3. REALTIME = FAST UPDATE
               {"\n"}==================================================
-              {"\n"}Repeat complete cycle: Deepak → logout, Vikram → logout, Imran → login. Verify no leakage.
-              {"\n"}Admin assigns Imran. Verify flow.
+              {"\n"}Keep Supabase Realtime. When a new assignment is created: emit/receive realtime event.
+              {"\n"}Then invalidate/refetch: assignments, Home, Available, Daily Route, Notifications, Earnings.
+              {"\n"}But realtime is only an acceleration mechanism.
               {"\n"}
               {"\n"}==================================================
-              {"\n"}TEST 5 — AARAV
+              {"\n"}4. POLLING = SAFETY NET
               {"\n"}==================================================
-              {"\n"}Repeat cycle for Aarav. Verify identity, token, realtime, assignment, Home, Route.
+              {"\n"}Add a lightweight safety refresh while the authenticated Partner App is active.
+              {"\n"}For example: every 10 seconds fetch current active assignments for the logged-in partner.
+              {"\n"}If the data changes: update the UI.
+              {"\n"}This is intentional redundancy.
               {"\n"}
               {"\n"}==================================================
-              {"\n"}TEST 6 — TOKEN OWNERSHIP
+              {"\n"}5. FCM = NOTIFICATION ONLY
               {"\n"}==================================================
-              {"\n"}Verify: CURRENT ACCOUNT → CURRENT TOKEN.
-              {"\n"}Verify logged-out partner doesn't receive notifications for new partner.
-              {"\n"}Verify logout doesn't invalidate other devices for the same partner.
+              {"\n"}If the partner has a valid FCM token: send: NEW SERVICE ASSIGNED
+              {"\n"}But FCM failure must NEVER prevent: assignment creation, in-app assignment, Home update, Route update.
               {"\n"}
               {"\n"}==================================================
-              {"\n"}TEST 7 — OFFLINE ASSIGNMENT
+              {"\n"}6. CANONICAL PARTNER ID
               {"\n"}==================================================
-              {"\n"}Logout Vikram / close app. Admin assigns Vikram. Login Vikram.
-              {"\n"}Expected: assignment recovered from DB, Home/Route updated.
+              {"\n"}Every Partner App must resolve ONE canonical partner identity.
+              {"\n"}Use: partners.id for: assignments.partner_id, partner notifications, assignment queries.
               {"\n"}
               {"\n"}==================================================
-              {"\n"}TEST 8 — CROSS-ACCOUNT LEAK TEST
+              {"\n"}7. SAME IMPLEMENTATION FOR ALL PARTNERS
               {"\n"}==================================================
-              {"\n"}Deepak (A), Vikram (B), Imran (C), Aarav (D). Switch accounts.
-              {"\n"}Expected: Deepak → ONLY A, Vikram → ONLY B, Imran → ONLY C, Aarav → ONLY D.
+              {"\n"}There must be NO special code for: Deepak, 9000000006, Trial, Real, specific phone, specific partner ID.
+              {"\n"}Every partner executes the SAME: LOGIN → RESOLVE PARTNER → FETCH ASSIGNMENTS → FETCH NOTIFICATIONS → CONNECT REALTIME → START SAFETY REFRESH.
               {"\n"}
               {"\n"}==================================================
-              {"\n"}IMPORTANT
+              {"\n"}8. PARTNER HOME
               {"\n"}==================================================
-              {"\n"}One device: push delivery alone isn't proof of multi-device FCM.
-              {"\n"}Record: FCM registration, ownership, send result, notification received.
-              {"\n"}State must work via DB + sync + realtime.
+              {"\n"}Home must derive assignment data directly from the authoritative assignment query.
+              {"\n"}When Admin assigns: Customer appears immediately, Customer count updates, Assignment status updates, Daily potential updates.
               {"\n"}
-              {"\n"}FINAL REPORT
-              {"\n"}PARTNER | LOGIN | TOKEN | REALTIME | CACHE ISOLATION | ASSIGNMENT | HOME | ROUTE | NOTIFICATIONS | FCM
-              {"\n"}Deepak: ____
-              {"\n"}Vikram: ____
-              {"\n"}Imran: ____
-              {"\n"}Aarav: ____
+              {"\n"}==================================================
+              {"\n"}9. DAILY ROUTE
+              {"\n"}==================================================
+              {"\n"}Daily Route must use the same assignment query.
+              {"\n"}After Admin assignment: customer, vehicle, registration, time, location, map must appear automatically.
               {"\n"}
-              {"\n"}Cross-account leakage = PASS/FAIL
-              {"\n"}Offline recovery = PASS/FAIL
-              {"\n"}Token ownership isolation = PASS/FAIL
-              {"\n"}Logout cleanup = PASS/FAIL
+              {"\n"}==================================================
+              {"\n"}10. NOTIFICATIONS
+              {"\n"}==================================================
+              {"\n"}Create partner in-app notification after successful assignment.
+              {"\n"}But notification delivery must NOT determine whether the assignment exists.
               {"\n"}
-              {"\n"}FINAL ACCEPTANCE: One phone can safely switch between all Partner accounts without data contamination.
+              {"\n"}==================================================
+              {"\n"}11. LOGIN RECOVERY
+              {"\n"}==================================================
+              {"\n"}If Admin assigns while partner is offline/logged out: then the next app open/login MUST fetch the active assignment.
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}12. ACCOUNT SWITCHING ON ONE PHONE
+              {"\n"}==================================================
+              {"\n"}When partner logs out: clear cached assignment state.
+              {"\n"}When another partner logs in: fetch only that partner's assignments.
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}13. ADMIN
+              {"\n"}==================================================
+              {"\n"}Admin assignment screen remains: PAID BOOKING → SELECT PARTNER → ASSIGN PARTNER.
+              {"\n"}The Admin action must not depend on partner notification delivery.
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}14. E2E TEST
+              {"\n"}==================================================
+              {"\n"}Use one Android phone. Test: Deepak, Vikram, Imran, Aarav.
+              {"\n"}For each: Login partner, verify active assignments, Admin assigns NEW booking, Wait without refreshing, Assignment must appear.
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}15. OFFLINE TEST
+              {"\n"}==================================================
+              {"\n"}Close Partner App. Admin assigns the partner. Open Partner App again.
+              {"\n"}Expected: assignment recovered immediately from database.
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}16. FCM FAILURE TEST
+              {"\n"}==================================================
+              {"\n"}Assume FCM is unavailable. Admin assigns partner.
+              {"\n"}Expected: assignment STILL appears in Partner App through: database fetch, realtime, or 10-second safety refresh.
+              {"\n"}
+              {"\n"}FINAL ACCEPTANCE: For ANY current or future partner: ADMIN ASSIGN → DATABASE ASSIGNMENT CREATED.
+              {"\n"}Then regardless of FCM or Realtime: PARTNER APP detects assignment, displays it, updates all screens.
+              {"\n"}FCM push is an additional alert, NOT the assignment mechanism.
             </div>
           </div>
         </div>

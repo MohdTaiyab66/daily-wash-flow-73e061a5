@@ -12,6 +12,7 @@ import { DeviceSetupWizard } from "@/components/partner/DeviceSetupWizard";
 import { useFcmRegistration } from "@/lib/push/use-fcm-registration";
 import { consumePendingLink } from "@/lib/push/fcm";
 import { usePartnerRouteSync } from "@/hooks/use-route-sync";
+import { useTodayAssignment } from "@/hooks/use-today-assignment";
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppLayout,
@@ -34,6 +35,10 @@ function PartnerRuntime() {
   usePartnerHeartbeat(partner?.id);
   useFcmRegistration(partner?.id ?? null, "partner");
   usePartnerRouteSync(partner?.id ?? null);
+  
+  // UNIVERSAL P0 FIX: Keep today-assignment polling active in background
+  // while the Partner App is authenticated, ensuring Home/Route always sync.
+  useTodayAssignment();
 
   // Deep-link from push notifications (background/killed app taps).
   useEffect(() => {
