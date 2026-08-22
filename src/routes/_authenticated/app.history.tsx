@@ -21,6 +21,8 @@ const RATE = 17;
 function HistoryPage() {
   const [range, setRange] = useState<"today" | "week" | "month">("week");
 
+  useRealtimeInvalidation(["services"], [["history", range]]);
+
   const { data: rows } = useQuery({
     queryKey: ["history", range],
     queryFn: async () => {
