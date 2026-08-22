@@ -192,7 +192,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   const deviceId = await getOrCreateDeviceId();
   const upsertToken = async (token: string) => {
     if (!token) {
-      console.error("[PARTNER-FCM] getToken failed: empty token returned");
+      // No token returned
       return;
     }
     
