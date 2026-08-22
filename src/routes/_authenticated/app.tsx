@@ -47,7 +47,7 @@ function PartnerRuntime() {
     if (pending) navigate({ to: pending as any });
 
     const invalidateAll = () => {
-      console.log("[PARTNER-RUNTIME] Triggering exhaustive invalidation from FCM/DeepLink");
+      // Sync data state from push events
       qc.invalidateQueries({ queryKey: ["today-assignment"] });
       qc.invalidateQueries({ queryKey: ["route-today"] });
       qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
