@@ -33,6 +33,12 @@ function EarningsPage() {
   const { t } = useI18n();
   const [tab, setTab] = useState<"today" | "week" | "month" | "lifetime">("week");
 
+  useRealtimeInvalidation(["services", "assignments", "partner_notifications", "wallet_ledger"], [
+    ["earnings-v3"],
+    ["today-assignment-for-earnings"],
+    ["today-assignment"]
+  ]);
+
   const { data: todayQuery } = useQuery({
     queryKey: ["today-assignment-for-earnings"],
     queryFn: async () => {
