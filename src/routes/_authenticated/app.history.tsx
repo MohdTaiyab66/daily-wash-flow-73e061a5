@@ -5,8 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Calendar, Car, IndianRupee, MapPin } from "lucide-react";
-
 import { PartnerShell } from "@/components/partner/PartnerShell";
+import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 
 export const Route = createFileRoute("/_authenticated/app/history")({
   component: () => (
@@ -20,6 +20,11 @@ const RATE = 17;
 
 function HistoryPage() {
   const [range, setRange] = useState<"today" | "week" | "month">("week");
+
+  useRealtimeInvalidation(["services", "assignments", "partner_notifications"], [
+    ["history", range],
+    ["partner-notifications-unread"]
+  ]);
 
   const { data: rows } = useQuery({
     queryKey: ["history", range],

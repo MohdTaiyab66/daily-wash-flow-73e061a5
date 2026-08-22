@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTodayAssignment } from "@/hooks/use-today-assignment";
 import { TodayAssignmentSkeleton } from "@/components/partner/TodayAssignmentStatus";
 import { Card } from "@/components/ui/card";
@@ -47,6 +48,7 @@ export const Route = createFileRoute("/_authenticated/app/")({
 
 function HomePage() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { data: partner } = usePartner();
   const toggle = useToggleOnline();
   const online = partner?.availability === "online";
@@ -59,12 +61,16 @@ function HomePage() {
     ["partner-open-offers-home"],
     ["available-work-summary", partner?.home_area],
     ["partner-notifications-unread"],
-    ["partner-earnings"]
+    ["partner-earnings"],
+    ["history"]
   ]);
 
   // Ensure we refetch on mount to clear any stale cache from previous sessions
   useEffect(() => {
     todayQuery.refetch();
+    qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
+    qc.invalidateQueries({ queryKey: ["partner-earnings"] });
+    qc.invalidateQueries({ queryKey: ["history"] });
   }, []);
   
   const todayData = todayQuery.data;

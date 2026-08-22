@@ -12,6 +12,7 @@ import {
 import { PartnerShell } from "@/components/partner/PartnerShell";
 import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
+import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { OfflineGuard } from "@/components/OfflineGuard";
 import { formatTime12 } from "@/lib/format";
 import {
@@ -53,6 +54,13 @@ function AssignmentsPage() {
   const [duration, setDuration] = useState(30);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+
+  useRealtimeInvalidation(["assignments", "partner_notifications", "services"], [
+    ["today-assignment"],
+    ["available-work-summary"],
+    ["me-partner-builder"],
+    ["assignment-settings-v3"]
+  ]);
 
   // Mondays are always off
   const countServiceDays = (calendarDays: number, startDate = new Date()) => {

@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bell, ArrowLeft, CheckCheck, Sparkles, ClipboardList, Wallet, Radio, Settings2, ChevronRight } from "lucide-react";
+import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 
 export const Route = createFileRoute("/_authenticated/app/notifications")({
   component: NotificationsPage,
@@ -25,6 +26,14 @@ const TABS = [
 function NotificationsPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
+  
+  // Realtime invalidation for the notifications page
+  // Note: There is also a manual useEffect listener below for fine-grained control,
+  // but useRealtimeInvalidation provides a robust fallback and forensic logging.
+  useRealtimeInvalidation(["partner_notifications"], [
+    ["partner-notifications"],
+    ["partner-notifications-unread"]
+  ]);
   const [tab, setTab] = useState<string>("all");
 
   const { data: rows, isLoading } = useQuery({
