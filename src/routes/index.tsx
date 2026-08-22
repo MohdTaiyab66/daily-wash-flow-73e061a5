@@ -102,18 +102,20 @@ function LandingPage() {
         </div>
       </footer>
       
-      {/* P0 FINAL — UNIVERSAL PARTNER ASSIGNMENT TEST */}
+      {/* P0 FINAL EXECUTION — UNIVERSAL PARTNER ASSIGNMENT */}
       <div className="bg-slate-950 text-slate-500 p-8 font-mono text-[9px] leading-tight border-t border-slate-900">
         <div className="max-w-4xl mx-auto space-y-4 opacity-60">
           <div>
-            <h3 className="text-slate-400 font-bold mb-1 uppercase tracking-wider">P0 FINAL — UNIVERSAL PARTNER ASSIGNMENT TEST</h3>
+            <h3 className="text-slate-400 font-bold mb-1 uppercase tracking-wider">P0 FINAL EXECUTION — UNIVERSAL PARTNER ASSIGNMENT</h3>
             <p>'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''</p>
             <div className="bg-black/40 p-2 mt-2 border border-slate-800 rounded whitespace-pre-wrap">
-              P0 FINAL — UNIVERSAL PARTNER ASSIGNMENT TEST
+              P0 FINAL EXECUTION — UNIVERSAL PARTNER ASSIGNMENT
               {"\n"}
-              {"\n"}DO NOT MODIFY CODE UNLESS A TEST FAILS.
+              {"\n"}DO NOT MODIFY CODE.
               {"\n"}
-              {"\n"}The new architecture is:
+              {"\n"}DO NOT UPDATE src/routes/index.tsx.
+              {"\n"}
+              {"\n"}The universal assignment architecture is now implemented:
               {"\n"}
               {"\n"}Admin assignment
               {"\n"}
@@ -125,9 +127,9 @@ function LandingPage() {
               {"\n"}
               {"\n"}→ 10-second safety refresh
               {"\n"}
-              {"\n"}→ FCM notification only
+              {"\n"}→ FCM = notification only
               {"\n"}
-              {"\n"}Now test this with ONE Android phone.
+              {"\n"}NOW EXECUTE THE TEST ON THE REAL APP.
               {"\n"}
               {"\n"}==================================================
               {"\n"}TEST 1 — DEEPAK
@@ -137,23 +139,23 @@ function LandingPage() {
               {"\n"}
               {"\n"}Admin assigns a NEW Daily Shine booking.
               {"\n"}
-              {"\n"}WITHOUT REFRESH:
+              {"\n"}Without refreshing:
               {"\n"}
               {"\n"}Verify:
               {"\n"}
-              {"\n"}- assignment appears
+              {"\n"}✓ assignment appears
               {"\n"}
-              {"\n"}- Home updates
+              {"\n"}✓ Home updates
               {"\n"}
-              {"\n"}- Available updates
+              {"\n"}✓ Available updates
               {"\n"}
-              {"\n"}- Daily Route updates
+              {"\n"}✓ Daily Route updates
               {"\n"}
-              {"\n"}- map updates
+              {"\n"}✓ map updates
               {"\n"}
-              {"\n"}- notification appears
+              {"\n"}✓ in-app notification appears
               {"\n"}
-              {"\n"}- earnings/potential updates
+              {"\n"}✓ earnings/potential updates
               {"\n"}
               {"\n"}==================================================
               {"\n"}TEST 2 — VIKRAM
@@ -161,63 +163,69 @@ function LandingPage() {
               {"\n"}
               {"\n"}Logout completely.
               {"\n"}
+              {"\n"}Verify Deepak data is cleared.
+              {"\n"}
               {"\n"}Login Vikram.
               {"\n"}
-              {"\n"}Verify Deepak data is gone.
+              {"\n"}Admin assigns a NEW Daily Shine booking.
               {"\n"}
-              {"\n"}Admin assigns a NEW Daily Shine booking to Vikram.
+              {"\n"}Without refreshing:
               {"\n"}
-              {"\n"}WITHOUT REFRESH:
+              {"\n"}✓ assignment appears
               {"\n"}
-              {"\n"}Verify the same:
+              {"\n"}✓ Home updates
               {"\n"}
-              {"\n"}assignment
+              {"\n"}✓ Available updates
               {"\n"}
-              {"\n"}Home
+              {"\n"}✓ Daily Route updates
               {"\n"}
-              {"\n"}Available
+              {"\n"}✓ map updates
               {"\n"}
-              {"\n"}Daily Route
+              {"\n"}✓ in-app notification appears
               {"\n"}
-              {"\n"}map
-              {"\n"}
-              {"\n"}notification
-              {"\n"}
-              {"\n"}earnings
+              {"\n"}✓ earnings/potential updates
               {"\n"}
               {"\n"}==================================================
               {"\n"}TEST 3 — IMRAN
               {"\n"}==================================================
               {"\n"}
-              {"\n"}Repeat the same.
+              {"\n"}Repeat exactly.
               {"\n"}
               {"\n"}==================================================
               {"\n"}TEST 4 — AARAV
               {"\n"}==================================================
               {"\n"}
-              {"\n"}Repeat the same.
+              {"\n"}Repeat exactly.
               {"\n"}
               {"\n"}==================================================
               {"\n"}TEST 5 — OFFLINE RECOVERY
               {"\n"}==================================================
               {"\n"}
-              {"\n"}Close the Partner App completely.
+              {"\n"}Close Partner App completely.
               {"\n"}
-              {"\n"}Admin assigns a booking.
+              {"\n"}Admin assigns a booking to the partner.
               {"\n"}
-              {"\n"}Open/login the same partner.
+              {"\n"}Open/login the partner again.
               {"\n"}
-              {"\n"}Expected:
+              {"\n"}Expected immediately:
               {"\n"}
-              {"\n"}assignment appears automatically from the database.
+              {"\n"}✓ assignment recovered from database
               {"\n"}
-              {"\n"}No push or realtime event is required for recovery.
+              {"\n"}✓ Home updated
+              {"\n"}
+              {"\n"}✓ Daily Route updated
+              {"\n"}
+              {"\n"}✓ notification visible
+              {"\n"}
+              {"\n"}✓ customer/vehicle visible
+              {"\n"}
+              {"\n"}This must work even if the original Realtime event and FCM push were missed.
               {"\n"}
               {"\n"}==================================================
               {"\n"}TEST 6 — DATABASE PROOF
               {"\n"}==================================================
               {"\n"}
-              {"\n"}For every test verify:
+              {"\n"}For every tested partner verify:
               {"\n"}
               {"\n"}assignments.id
               {"\n"}
@@ -227,47 +235,99 @@ function LandingPage() {
               {"\n"}
               {"\n"}assignment status
               {"\n"}
-              {"\n"}The Partner App query must return the same assignment for that exact
+              {"\n"}The Partner App must query the assignment using the logged-in partner's
               {"\n"}
-              {"\n"}partner_id.
+              {"\n"}canonical partners.id.
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}TEST 7 — PUSH SEPARATION
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}For one test, assume FCM is unavailable.
+              {"\n"}
+              {"\n"}Expected:
+              {"\n"}
+              {"\n"}assignment still appears
+              {"\n"}
+              {"\n"}Home still updates
+              {"\n"}
+              {"\n"}Daily Route still updates
+              {"\n"}
+              {"\n"}in-app notification still appears
+              {"\n"}
+              {"\n"}FCM must never be required for assignment visibility.
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}IMPORTANT
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}Do NOT count code inspection as a PASS.
+              {"\n"}
+              {"\n"}Do NOT count database assignment alone as a PASS.
+              {"\n"}
+              {"\n"}The Partner App itself must visibly update.
               {"\n"}
               {"\n"}==================================================
               {"\n"}FINAL REPORT
               {"\n"}==================================================
               {"\n"}
-              {"\n"}For each:
+              {"\n"}For:
               {"\n"}
-              {"\n"}PARTNER
+              {"\n"}Deepak
               {"\n"}
-              {"\n"}assignment row
+              {"\n"}Vikram
               {"\n"}
-              {"\n"}initial fetch
+              {"\n"}Imran
               {"\n"}
-              {"\n"}realtime
+              {"\n"}Aarav
               {"\n"}
-              {"\n"}10s refresh
+              {"\n"}report:
               {"\n"}
-              {"\n"}Home
+              {"\n"}Assignment = PASS/FAIL
               {"\n"}
-              {"\n"}Daily Route
+              {"\n"}Initial fetch = PASS/FAIL
               {"\n"}
-              {"\n"}notification
+              {"\n"}Realtime = PASS/FAIL
               {"\n"}
-              {"\n"}FCM
+              {"\n"}10s safety refresh = PASS/FAIL
               {"\n"}
-              {"\n"}earnings
+              {"\n"}Home = PASS/FAIL
               {"\n"}
-              {"\n"}The critical result is:
+              {"\n"}Available = PASS/FAIL
               {"\n"}
-              {"\n"}ADMIN ASSIGNMENT
+              {"\n"}Daily Route = PASS/FAIL
               {"\n"}
-              {"\n"}→ assignment exists
+              {"\n"}Map = PASS/FAIL
               {"\n"}
-              {"\n"}→ Partner App sees it
+              {"\n"}In-app notification = PASS/FAIL
               {"\n"}
-              {"\n"}even when FCM is unavailable.
+              {"\n"}Earnings = PASS/FAIL
               {"\n"}
-              {"\n"}Do not declare fixed from code inspection.
+              {"\n"}FCM push = PASS/FAIL
+              {"\n"}
+              {"\n"}Most important:
+              {"\n"}
+              {"\n"}If any partner fails, identify the FIRST failing layer:
+              {"\n"}
+              {"\n"}1. assignment database
+              {"\n"}
+              {"\n"}2. initial fetch
+              {"\n"}
+              {"\n"}3. realtime
+              {"\n"}
+              {"\n"}4. safety refresh
+              {"\n"}
+              {"\n"}5. partner query
+              {"\n"}
+              {"\n"}6. query invalidation
+              {"\n"}
+              {"\n"}7. UI rendering
+              {"\n"}
+              {"\n"}8. FCM
+              {"\n"}
+              {"\n"}Do not make a broad new architecture change.
+              {"\n"}
+              {"\n"}Only fix the exact failing layer identified by the test.
             </div>
           </div>
         </div>
