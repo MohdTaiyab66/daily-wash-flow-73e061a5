@@ -216,7 +216,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
       try {
         await Preferences.set({ key: "urbanwash.last_token_upload_error", value: msg });
       } catch { /* noop */ }
-      console.error("[CUSTOMER-FCM-REGISTRATION:07] TOKEN_BACKEND_REGISTRATION_FAILED:", msg);
+      // Token registration failed
     };
 
     try {
