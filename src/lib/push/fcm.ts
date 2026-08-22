@@ -196,8 +196,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
       return;
     }
     
-    console.log(`[PARTNER-FCM] getToken succeeded. length: ${token.length}, tail: ${token.slice(-4)}`);
-    console.log(`[PARTNER-FCM] registerPushToken called for user: ${userId}`);
+    // Register token with backend
 
 
     try {
