@@ -34,6 +34,10 @@ function PartnerRuntime() {
   usePartnerHeartbeat(partner?.id);
   useFcmRegistration(partner?.id ?? null, "partner");
   usePartnerRouteSync(partner?.id ?? null);
+  
+  // UNIVERSAL P0 FIX: Keep today-assignment polling active in background
+  // while the Partner App is authenticated, ensuring Home/Route always sync.
+  useTodayAssignment();
 
   // Deep-link from push notifications (background/killed app taps).
   useEffect(() => {
