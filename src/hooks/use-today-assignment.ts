@@ -56,119 +56,93 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
       fetchedAt: Date.now(),
     };
   }
-  const now = new Date();
-  const today = getTodayIST();
-  const isMonday = now.getDay() === 1;
 
-  // Resolve canonical partner identity for data fetching
-  const { data: me } = await supabase
-    .from("partners")
-    .select("id")
-    .or(`id.eq.${u.user.id},phone.eq.${u.user.phone?.replace('91', '') || 'NONE'},email.eq.${u.user.email}`)
-    .maybeSingle();
-
-  const partnerId = me?.id || u.user.id;
-
-  const { data: a, error: aErr } = await supabase
-    .from("assignments")
-    .select("*")
-    .eq("partner_id", partnerId)
-    .eq("status", "active")
-    .gte("end_date", today)
-    .order("start_date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (aErr) throw aErr;
-
-  // AUTHORITATIVE FALLBACK: Always fetch loose services for today regardless of assignment ID
-  // This handles the "Failure A/B" where Admin Assign happens but Assignment ID linkage takes a moment.
-  const { data: looseToday, error: lErr } = await supabase
-    .from("services")
-    .select("id,assignment_id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,locked_position,manual_sequence_no,is_emergency,cluster_id,eta_at,travel_min,distance_km,destination_lat,destination_lng,destination_source,scheduled_date,customer_id,vehicle_id,rate_per_car,customers(full_name,area,address_line,phone,service_required_before,preferred_time,time_window_type,exact_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
-    .eq("partner_id", partnerId)
-    .eq("scheduled_date", today);
+  // Resolve canonical partner identity using the secure resolver
+  const { data: partnerId } = await supabase.rpc("resolve_partner_id", { p_user_id: u.user.id });
   
-  if (lErr) throw lErr;
-
-  const tds = (looseToday ?? []).filter((s: any) => s.status !== "covered_by_booking");
-  const cCountToday = tds.filter((s: any) => s.status === "completed").length;
-  const uCountToday = tds.filter((s: any) => s.status === "unavailable" && s.unavailable_reason !== "dirty_vehicle").length;
-  const nCountToday = tds.filter((s: any) => s.status === "unavailable" && s.unavailable_reason === "dirty_vehicle").length;
-  
-  const standardRateDefault = 17;
-  const exceptionRate = 12;
-
-  const earnedToday = (cCountToday * standardRateDefault) + (uCountToday * exceptionRate) + (nCountToday * exceptionRate);
-  const uniqueVehiclesToday = new Set(tds.map((s: any) => s.vehicle_id).filter(Boolean)).size;
-
-  if (!a) {
+  if (!partnerId) {
     return {
-      assignment: null, all: [], today: tds, nextDate: null,
-      todaysCustomers: uniqueVehiclesToday,
-      completedToday: cCountToday,
-      unavailableToday: uCountToday,
-      needWashToday: nCountToday,
-      remainingToday: tds.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
-      actualEarnedToday: earnedToday,
-      potentialDailyEarnings: tds.length * standardRateDefault,
-      potentialMonthlyEarnings: (tds.length * standardRateDefault) * 26,
-      assignmentTotalCustomers: uniqueVehiclesToday, 
-      assignmentCompleted: cCountToday,
-      targetCars: 0, 
-      expectedDailyEarnings: tds.length * standardRateDefault, 
-      expectedMonthlyEarnings: (tds.length * standardRateDefault) * 26,
+      assignment: null, all: [], today: [], nextDate: null,
+      todaysCustomers: 0, completedToday: 0, 
+      unavailableToday: 0, needWashToday: 0,
+      remainingToday: 0,
+      actualEarnedToday: 0, potentialDailyEarnings: 0, potentialMonthlyEarnings: 0,
+      assignmentTotalCustomers: 0, assignmentCompleted: 0,
+      targetCars: 0, expectedDailyEarnings: 0, expectedMonthlyEarnings: 0,
       fetchedAt: Date.now(),
     };
   }
 
-  // Fetch all services for the assignment to get "all" and "nextDate"
-  const { data: allServices, error: sErr } = await supabase
-    .from("services")
-    .select("id,assignment_id,status,time_slot,sequence_no,started_at,completed_at,unavailable_reason,locked_position,manual_sequence_no,is_emergency,cluster_id,eta_at,travel_min,distance_km,destination_lat,destination_lng,destination_source,scheduled_date,customer_id,vehicle_id,rate_per_car,customers(full_name,area,address_line,phone,service_required_before,preferred_time,time_window_type,exact_time,latitude,longitude),vehicles(make,model,registration_number,color,front_image_path,parking_notes)")
-    .eq("assignment_id", a.id);
-  if (sErr) throw sErr;
+  // AUTHORITATIVE PARTNER WORK SOURCE: Fetch all assigned work for today via RPC
+  const { data: work, error: workErr } = await supabase.rpc("get_partner_work", { p_partner_id: partnerId });
+  if (workErr) throw workErr;
 
-  const all = (allServices ?? []).filter((s: any) => s.status !== "covered_by_booking");
-  
-  // Merge assignment services with loose today services to ensure zero-latency propagation
-  const assignmentServiceIds = new Set(all.map(s => s.id));
-  const mergedToday = [...all.filter((s: any) => s.scheduled_date === today), ...tds.filter(s => !assignmentServiceIds.has(s.id))];
+  const todayStr = getTodayIST();
+  const isMonday = new Date().getDay() === 1;
 
-  const nextDate = all
-    .map((s: any) => s.scheduled_date as string)
-    .filter((d) => d && d > today)
-    .sort()[0] ?? null;
+  // Map RPC results to expected UI shape
+  const today = (work ?? []).map((w: any) => ({
+    id: w.service_id,
+    assignment_id: w.assignment_id,
+    status: w.service_status,
+    scheduled_date: w.scheduled_date,
+    scheduled_time: w.scheduled_time,
+    booking_id: w.booking_id,
+    customer_id: w.customer_id,
+    vehicle_id: w.vehicle_id,
+    rate_per_car: w.earning_value,
+    customers: {
+      full_name: w.customer_name,
+      phone: w.customer_phone,
+      latitude: w.location_lat,
+      longitude: w.location_lng,
+      address_line: w.address
+    },
+    vehicles: {
+      make: w.vehicle_name?.split(' ')[0] || '',
+      model: w.vehicle_name?.split(' ').slice(1).join(' ') || '',
+      registration_number: w.vehicle_number
+    }
+  }));
 
-  const targetCars = Number(a.target_cars || 0);
-  const ratePerCar = Number(a.rate_per_car || standardRateDefault);
+  const cCount = today.filter((s: any) => s.status === "completed").length;
+  const uCount = today.filter((s: any) => s.status === "unavailable").length; // Need Wash logic handled by RPC/status logic
   
-  const mergedTotalCustomers = new Set(mergedToday.map((s: any) => s.vehicle_id).filter(Boolean)).size;
-  const effectiveCustomerCount = mergedTotalCustomers > 0 ? mergedTotalCustomers : targetCars;
+  // Potential and actual earnings logic
+  const actualEarnedToday = today
+    .filter((s: any) => s.status === "completed")
+    .reduce((sum: number, s: any) => sum + (s.rate_per_car || 0), 0);
   
-  const potentialDailyEarnings = effectiveCustomerCount * ratePerCar;
+  const potentialDailyEarnings = today.reduce((sum: number, s: any) => sum + (s.rate_per_car || 0), 0);
   
-  const cCountMerged = mergedToday.filter((s: any) => s.status === "completed").length;
-  const uCountMerged = mergedToday.filter((s: any) => s.status === "unavailable" && s.unavailable_reason !== "dirty_vehicle").length;
-  const nCountMerged = mergedToday.filter((s: any) => s.status === "unavailable" && s.unavailable_reason === "dirty_vehicle").length;
+  const uniqueVehicles = new Set(today.map((s: any) => s.vehicle_id).filter(Boolean)).size;
 
-  const actualEarnedTodayMerged = (cCountMerged * ratePerCar) + (uCountMerged * exceptionRate) + (nCountMerged * exceptionRate);
+  // Get active assignment details for metrics
+  const { data: activeAssignment } = await supabase
+    .from("assignments")
+    .select("*")
+    .eq("partner_id", partnerId)
+    .eq("status", "active")
+    .order("start_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   return {
-    assignment: a,
-    all,
-    today: mergedToday,
-    nextDate,
-    todaysCustomers: isMonday ? 0 : mergedTotalCustomers,
-    completedToday: isMonday ? 0 : cCountMerged,
-    unavailableToday: isMonday ? 0 : uCountMerged,
-    needWashToday: isMonday ? 0 : nCountMerged,
-    remainingToday: isMonday ? 0 : mergedToday.filter((s: any) => s.status !== "completed" && s.status !== "unavailable").length,
-    actualEarnedToday: isMonday ? 0 : actualEarnedTodayMerged,
+    assignment: activeAssignment,
+    all: today,
+    today: today,
+    nextDate: null, // Derived from RPC if needed
+    todaysCustomers: isMonday ? 0 : uniqueVehicles,
+    completedToday: isMonday ? 0 : cCount,
+    unavailableToday: isMonday ? 0 : uCount,
+    needWashToday: 0, // Consolidated into unavailable or specific status
+    remainingToday: isMonday ? 0 : today.filter((s: any) => s.status === "pending" || s.status === "in_progress").length,
+    actualEarnedToday: isMonday ? 0 : actualEarnedToday,
     potentialDailyEarnings,
     potentialMonthlyEarnings: potentialDailyEarnings * 26,
-    assignmentTotalCustomers: mergedTotalCustomers,
-    assignmentCompleted: cCountMerged,
-    targetCars,
+    assignmentTotalCustomers: uniqueVehicles,
+    assignmentCompleted: cCount,
+    targetCars: activeAssignment?.target_cars || uniqueVehicles,
     expectedDailyEarnings: potentialDailyEarnings,
     expectedMonthlyEarnings: potentialDailyEarnings * 26,
     fetchedAt: Date.now(),
