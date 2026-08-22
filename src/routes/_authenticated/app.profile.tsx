@@ -15,6 +15,7 @@ import { CapacitySettingsCard } from "@/components/partner/CapacitySettingsCard"
 import { ReliabilityCard } from "@/components/partner/ReliabilityCard";
 import { PARTNER_APP_VERSION, PARTNER_BUILD_ID } from "@/lib/buildInfo";
 import { toast } from "sonner";
+import { useSignOut } from "@/hooks/use-sign-out";
 
 import { PartnerShell } from "@/components/partner/PartnerShell";
 
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/_authenticated/app/profile")({
 
 function ProfilePage() {
   const navigate = useNavigate();
+  const { signOut } = useSignOut();
   const { t } = useI18n();
   const { data: partner } = useQuery({
     queryKey: ["me-partner-profile"],
@@ -38,9 +40,8 @@ function ProfilePage() {
     },
   });
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate({ to: "/" });
+  const handleSignOut = async () => {
+    await signOut("/");
   };
 
   const verifications = [
@@ -165,7 +166,7 @@ function ProfilePage() {
         <p className="mt-0.5 font-mono text-xs text-muted-foreground">{PARTNER_BUILD_ID}</p>
       </Card>
 
-      <Button variant="outline" className="mt-3 w-full" onClick={signOut}>
+      <Button variant="outline" className="mt-3 w-full" onClick={handleSignOut}>
         <LogOut className="mr-2 h-4 w-4" /> {t("sign_out")}
       </Button>
       <div className="h-6" />
