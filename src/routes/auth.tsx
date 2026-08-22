@@ -172,7 +172,7 @@ function AuthPage() {
         if (!partner?.full_name) { 
           setLoading(false); 
           setStep("name"); 
-          console.log("[PARTNER-AUTH:07] PROFILE_COMPLETION_SHOWN");
+          // Show profile completion if needed
           return; 
         }
         await ensureStaffRole("partner", partner.full_name);
