@@ -346,7 +346,7 @@ export async function dispatchCustomerNotifications(): Promise<number> {
   let sentCount = 0;
   // Process notification queue
   for (const r of (rows ?? [])) {
-    console.log(`[PUSH-LATENCY:02] NOTIFICATION_CREATED ts=${Date.now()}`);
+    // Handle individual notification
     const type = String(r.type ?? "");
 
     // Canonical mapping to prevent unknown events
