@@ -33,7 +33,7 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
 
     tables.forEach((table) => {
       channel.on("postgres_changes", { event: "*", schema: "public", table }, (payload) => {
-        console.log(`[PARTNER-REALTIME] [EVENT] Change in ${table}: ${payload.eventType}`, payload);
+        // Handle change event
         refresh(`DB_${table}_${payload.eventType}`);
       });
     });
