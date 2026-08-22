@@ -118,7 +118,7 @@ export async function startFcm(userId: string, app: "partner" | "customer" = app
   // Initialize FCM for native platform
 
   if (!native || !userId) {
-    console.log(`[PARTNER-FCM] startFcm aborted: native=${native}, userId=${!!userId}`);
+    // Skip on web or missing user
     return;
   }
   
