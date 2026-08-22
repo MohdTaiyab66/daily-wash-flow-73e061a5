@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { isNative } from "@/lib/platform";
 
 /**
- * Generic realtime invalidation hook with forensic logging.
+ * Generic realtime invalidation hook.
  */
 export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<readonly unknown[]>) {
   const queryClient = useQueryClient();
