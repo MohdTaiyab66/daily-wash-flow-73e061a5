@@ -125,8 +125,7 @@ function TopBar() {
             const notif = payload.new as any;
             qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
             
-            // UNIVERSAL P0 FIX: Exhaustive invalidation for all possible assignment events.
-            // This ensures Home, Route, and Earnings are always up-to-date after an Admin assignment.
+            // Trigger invalidation on assignment events.
             if (
               notif?.type === "new_assignment" || 
               notif?.type === "assignment_new" || 
