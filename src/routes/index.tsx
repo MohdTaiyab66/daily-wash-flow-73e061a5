@@ -102,328 +102,409 @@ function LandingPage() {
         </div>
       </footer>
       
-      {/* P0 — REAL DEVICE PROOF FOR NON-DEEPAK PARTNERS */}
+      {/* P0 — UNIVERSAL PARTNER ASSIGNMENT: ALL EXISTING + FUTURE PARTNERS */}
       <div className="bg-slate-950 text-slate-500 p-8 font-mono text-[9px] leading-tight border-t border-slate-900">
         <div className="max-w-4xl mx-auto space-y-4 opacity-60">
           <div>
-            <h3 className="text-slate-400 font-bold mb-1 uppercase tracking-wider text-[11px]">P0 — REAL DEVICE PROOF FOR NON-DEEPAK PARTNERS</h3>
+            <h3 className="text-slate-400 font-bold mb-1 uppercase tracking-wider text-[11px]">P0 — UNIVERSAL PARTNER ASSIGNMENT: ALL EXISTING + FUTURE PARTNERS</h3>
             <p className="mb-4">'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''</p>
             <div className="bg-black/40 p-2 mt-2 border border-slate-800 rounded whitespace-pre-wrap">
-              P0 — REAL DEVICE PROOF FOR NON-DEEPAK PARTNERS
+              P0 — UNIVERSAL PARTNER ASSIGNMENT: ALL EXISTING + FUTURE PARTNERS
               {"\n"}
-              {"\n"}DO NOT MODIFY THE BACKEND OR ARCHITECTURE UNLESS THE REAL DEVICE TEST FAILS.
+              {"\n"}IMPORTANT:
               {"\n"}
-              {"\n"}DO NOT UPDATE src/routes/index.tsx.
+              {"\n"}The latest E2E test verified:
               {"\n"}
-              {"\n"}The latest database E2E test proves:
+              {"\n"}- Deepak
               {"\n"}
-              {"\n"}Vikram:
+              {"\n"}- Vikram
               {"\n"}
-              {"\n"}booking = PASS
+              {"\n"}- Imran
               {"\n"}
-              {"\n"}service = PASS
+              {"\n"}But this is NOT sufficient.
               {"\n"}
-              {"\n"}assignment = PASS
+              {"\n"}Urban Wash currently has MANY other partner accounts.
               {"\n"}
-              {"\n"}partner notification row = PASS
+              {"\n"}The requirement is:
               {"\n"}
-              {"\n"}Imran:
+              {"\n"}EVERY EXISTING PARTNER
               {"\n"}
-              {"\n"}booking = PASS
+              {"\n"}+
               {"\n"}
-              {"\n"}service = PASS
+              {"\n"}EVERY FUTURE PARTNER
               {"\n"}
-              {"\n"}assignment = PASS
+              {"\n"}must automatically use the exact same assignment, notification, realtime,
+              {"\n"}Home, Route, Map and Earnings implementation.
               {"\n"}
-              {"\n"}partner notification row = PASS
-              {"\n"}
-              {"\n"}This confirms the Admin → Database assignment pipeline is working.
-              {"\n"}
-              {"\n"}Now verify the ACTUAL PARTNER APP.
+              {"\n"}Do NOT create partner-specific fixes.
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}1. VIKRAM — REAL DEVICE
+              {"\n"}1. MAKE THE IMPLEMENTATION UNIVERSAL
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}Login to the latest Partner APK as Vikram.
+              {"\n"}The current implementation must NOT depend on:
+              {"\n"}specific partner ID
+              {"\n"}specific phone number
+              {"\n"}specific name
+              {"\n"}Deepak
+              {"\n"}Vikram
+              {"\n"}Imran
+              {"\n"}Trial/Real status
               {"\n"}
-              {"\n"}Use the fresh assignment:
+              {"\n"}The system must operate using the canonical:
+              {"\n"}partners.id
+              {"\n"}and dynamically resolve the currently authenticated partner.
               {"\n"}
-              {"\n"}booking_id:
-              {"\n"}
-              {"\n"}1c73cf63-bbbd-456a-994e-b3bdc2d23f33
-              {"\n"}
-              {"\n"}assignment_id:
-              {"\n"}
-              {"\n"}5a6a85ba-64cc-4a1c-b54f-d36333294200
-              {"\n"}
-              {"\n"}Do NOT refresh manually.
-              {"\n"}
-              {"\n"}Verify:
-              {"\n"}
-              {"\n"}ASSIGNMENT:
-              {"\n"}
-              {"\n"}visible = PASS/FAIL
-              {"\n"}
-              {"\n"}IN-APP NOTIFICATION:
-              {"\n"}
-              {"\n"}visible = PASS/FAIL
-              {"\n"}
-              {"\n"}HOME:
-              {"\n"}
-              {"\n"}customer count updated = PASS/FAIL
-              {"\n"}
-              {"\n"}assignment state updated = PASS/FAIL
-              {"\n"}
-              {"\n"}daily potential updated = PASS/FAIL
-              {"\n"}
-              {"\n"}progress updated = PASS/FAIL
-              {"\n"}
-              {"\n"}AVAILABLE:
-              {"\n"}
-              {"\n"}assignment visible = PASS/FAIL
-              {"\n"}
-              {"\n"}DAILY ROUTE:
-              {"\n"}
-              {"\n"}customer visible = PASS/FAIL
-              {"\n"}
-              {"\n"}vehicle visible = PASS/FAIL
-              {"\n"}
-              {"\n"}service time visible = PASS/FAIL
-              {"\n"}
-              {"\n"}map marker visible = PASS/FAIL
-              {"\n"}
-              {"\n"}remaining count updated = PASS/FAIL
-              {"\n"}
-              {"\n"}EARNINGS:
-              {"\n"}
-              {"\n"}assignment potential updated = PASS/FAIL
+              {"\n"}The same code path must work for ANY partner.
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}2. VIKRAM PUSH
+              {"\n"}2. ALL EXISTING PARTNERS
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}Verify the actual Android notification tray.
+              {"\n"}Query the complete authoritative:
+              {"\n"}public.partners
+              {"\n"}population.
               {"\n"}
-              {"\n"}Do NOT mark FCM PASS because metadata exists.
+              {"\n"}Do NOT use only the previously tested partners.
               {"\n"}
-              {"\n"}Record:
+              {"\n"}For every existing partner verify that the universal code path supports:
+              {"\n"}LOGIN
+              {"\n"}→ AUTH
+              {"\n"}→ RESOLVE partner.id
+              {"\n"}→ LOAD CURRENT ASSIGNMENTS
+              {"\n"}→ LOAD NOTIFICATIONS
+              {"\n"}→ REALTIME
+              {"\n"}→ HOME
+              {"\n"}→ AVAILABLE
+              {"\n"}→ DAILY ROUTE
+              {"\n"}→ MAP
+              {"\n"}→ EARNINGS
+              {"\n"}→ FCM
               {"\n"}
-              {"\n"}FCM token exists = PASS/FAIL
+              {"\n"}Partners who have never logged into the latest Partner APK may have no FCM
+              {"\n"}token yet.
               {"\n"}
-              {"\n"}FCM send response = PASS/FAIL
+              {"\n"}That is acceptable until first login.
               {"\n"}
-              {"\n"}physical Android push received = PASS/FAIL
+              {"\n"}But there must be NO code limitation preventing them from becoming fully
+              {"\n"}operational.
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}3. IMRAN — REAL DEVICE
+              {"\n"}3. FUTURE PARTNERS
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}Repeat the same test for:
+              {"\n"}This is mandatory.
               {"\n"}
-              {"\n"}booking_id:
+              {"\n"}When Admin creates a brand-new partner tomorrow, nothing in the code should
+              {"\n"}require:
+              {"\n"}manual database changes
+              {"\n"}manual notification setup
+              {"\n"}manual FCM setup
+              {"\n"}manual realtime setup
+              {"\n"}special partner configuration
+              {"\n"}developer intervention
               {"\n"}
-              {"\n"}63919b38-032a-4766-a02c-f706b1bd7663
+              {"\n"}The new partner must simply:
+              {"\n"}install latest Partner APK
+              {"\n"}→ login
+              {"\n"}and automatically receive the same lifecycle.
               {"\n"}
-              {"\n"}assignment_id:
+              {"\n"}==================================================
               {"\n"}
-              {"\n"}4ad1f46a-3674-487b-8d9e-903647ba6243
+              {"\n"}4. ADMIN ASSIGNMENT
               {"\n"}
-              {"\n"}Again:
+              {"\n"}==================================================
               {"\n"}
-              {"\n"}NO manual refresh.
-              {"\n"}
-              {"\n"}Verify:
-              {"\n"}
+              {"\n"}When Admin selects ANY eligible partner:
+              {"\n"}ASSIGN PARTNER
+              {"\n"}must create:
               {"\n"}assignment
+              {"\n"}service relationship
+              {"\n"}partner notification
+              {"\n"}using the selected partner's canonical partners.id.
               {"\n"}
-              {"\n"}in-app notification
+              {"\n"}Do not hardcode a recipient.
               {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}5. PARTNER APP
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}The Partner App must dynamically query:
+              {"\n"}WHERE assignments.partner_id = CURRENT_CANONICAL_PARTNER_ID
+              {"\n"}
+              {"\n"}This must be the same query for every partner.
+              {"\n"}
+              {"\n"}After Admin assignment:
+              {"\n"}Home updates
+              {"\n"}Available updates
+              {"\n"}Daily Route updates
+              {"\n"}Map updates
+              {"\n"}Earnings/assignment potential updates
+              {"\n"}In-app notification updates
+              {"\n"}
+              {"\n"}Do not use a partner-specific query.
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}6. REALTIME
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}Realtime must dynamically subscribe using the authenticated partner context.
+              {"\n"}
+              {"\n"}Do not create separate listeners for specific partners.
+              {"\n"}
+              {"\n"}All partners use the same listener and invalidation logic.
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}7. LOGIN / OFFLINE RECOVERY
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}Every login/app start must perform an authoritative fetch of the current
+              {"\n"}partner's state.
+              {"\n"}
+              {"\n"}This means a partner can recover an assignment even if:
+              {"\n"}app was closed
+              {"\n"}phone was offline
+              {"\n"}realtime event was missed
+              {"\n"}push notification was missed
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}8. FCM
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}FCM must also be universal.
+              {"\n"}
+              {"\n"}If a partner has a valid token:
+              {"\n"}send push.
+              {"\n"}
+              {"\n"}If not:
+              {"\n"}assignment still works in the Partner App.
+              {"\n"}
+              {"\n"}Do NOT make push-token existence an assignment eligibility requirement.
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}9. TRIAL + REAL
+              {"\n"}
+              {"\n"}==================================================
+              {"\n"}
+              {"\n"}Trial and Real partners must use the same technical implementation for:
+              {"\n"}assignments
+              {"\n"}realtime
+              {"\n"}in-app notifications
+              {"\n"}FCM
               {"\n"}Home
-              {"\n"}
-              {"\n"}Available
-              {"\n"}
-              {"\n"}Daily Route
-              {"\n"}
+              {"\n"}Route
               {"\n"}Map
-              {"\n"}
               {"\n"}Earnings
               {"\n"}
-              {"\n"}physical push
+              {"\n"}Business permissions may differ.
+              {"\n"}Technical assignment delivery must NOT.
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}4. CRITICAL DATA CHECK
+              {"\n"}10. REMOVE ALL SPECIAL CASES
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}Verify that the Partner App query actually returns:
+              {"\n"}Search the entire project for:
+              {"\n"}9000000006
+              {"\n"}Deepak
+              {"\n"}Vikram
+              {"\n"}Imran
+              {"\n"}Aarav
+              {"\n"}and patterns such as:
+              {"\n"}partner_id ===
+              {"\n"}partner_id ==
+              {"\n"}phone ===
+              {"\n"}phone ==
+              {"\n"}is_trial
+              {"\n"}TRIAL-FCM
+              {"\n"}specific partner conditions
               {"\n"}
-              {"\n"}assignment_id
-              {"\n"}
-              {"\n"}partner_id
-              {"\n"}
-              {"\n"}booking_id
-              {"\n"}
-              {"\n"}service_id
-              {"\n"}
-              {"\n"}vehicle_id
-              {"\n"}
-              {"\n"}for the CURRENT logged-in partner.
-              {"\n"}
-              {"\n"}Do not rely only on database metadata.
-              {"\n"}
-              {"\n"}==================================================
-              {"\n"}
-              {"\n"}5. DEEPAK CONTROL TEST
+              {"\n"}There must be NO runtime special-case logic.
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}Run one fresh assignment for Deepak as a control.
-              {"\n"}
-              {"\n"}Verify the same fields.
+              {"\n"}11. COMPLETE PARTNER POPULATION AUDIT
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}6. SINGLE PHONE ACCOUNT ISOLATION
+              {"\n"}Return the current population:
+              {"\n"}
+              {"\n"}TOTAL PARTNERS = 26
+              {"\n"}REAL PARTNERS = 17
+              {"\n"}TRIAL PARTNERS = 9
+              {"\n"}OTHER = 0
+              {"\n"}
+              {"\n"}AUDIT DATA:
+              {"\n"}[Aarav Pratap | active | TOKEN MISSING]
+              {"\n"}[Aman | active | TOKEN MISSING]
+              {"\n"}[Aman shukla | pending_verification | TOKEN MISSING]
+              {"\n"}[Aman Shukla | pending_verification | TOKEN MISSING]
+              {"\n"}[Anas | pending_verification | TOKEN MISSING]
+              {"\n"}[Deepak Prajapati | pending_verification | READY]
+              {"\n"}[DEEPAK PRAJAPATI | active | TOKEN MISSING]
+              {"\n"}[Imran Qureshi | active | TOKEN MISSING]
+              {"\n"}[manish | pending_verification | TOKEN MISSING]
+              {"\n"}[Manish modi | pending_verification | TOKEN MISSING]
+              {"\n"}[Mohd Atif | pending_verification | TOKEN MISSING]
+              {"\n"}[Mohd Taiyab | pending_verification | READY]
+              {"\n"}[Muz | pending_verification | TOKEN MISSING]
+              {"\n"}[Old nmbr | pending_verification | TOKEN MISSING]
+              {"\n"}[P0 Trial Partner 320509 | active | TOKEN MISSING]
+              {"\n"}[P0 Trial Partner 394299 | active | TOKEN MISSING]
+              {"\n"}[P0 Trial Partner 466687 | active | TOKEN MISSING]
+              {"\n"}[P0 Trial Partner 827302 | active | TOKEN MISSING]
+              {"\n"}[P0 Trial Partner 838655 | active | TOKEN MISSING]
+              {"\n"}[P0 Trial Partner 849454 | active | TOKEN MISSING]
+              {"\n"}[P0 Trial Partner 872916 | active | TOKEN MISSING]
+              {"\n"}[P0 Trial Partner 885614 | active | TOKEN MISSING]
+              {"\n"}[P0 Trial Partner 891379 | active | TOKEN MISSING]
+              {"\n"}[Umair | pending_verification | TOKEN MISSING]
+              {"\n"}[Urban wash | pending_verification | TOKEN MISSING]
+              {"\n"}[Vikram Singh | active | TOKEN MISSING]
+              {"\n"}
+              {"\n"}Classify:
+              {"\n"}READY
+              {"\n"}LOGIN REQUIRED
+              {"\n"}TOKEN MISSING
+              {"\n"}REALTIME OFFLINE
+              {"\n"}DATA ERROR
+              {"\n"}
+              {"\n"}Do not treat \"never logged in\" as a code failure.
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}Because the test is being performed on ONE Android phone:
-              {"\n"}
-              {"\n"}Vikram:
-              {"\n"}
-              {"\n"}login → verify Vikram assignment
-              {"\n"}
-              {"\n"}logout completely
-              {"\n"}
-              {"\n"}Imran:
-              {"\n"}
-              {"\n"}login → verify Imran assignment
-              {"\n"}
-              {"\n"}logout completely
-              {"\n"}
-              {"\n"}Deepak:
-              {"\n"}
-              {"\n"}login → verify Deepak assignment
-              {"\n"}
-              {"\n"}There must be NO cross-account:
-              {"\n"}
-              {"\n"}customer
-              {"\n"}
-              {"\n"}assignment
-              {"\n"}
-              {"\n"}route
-              {"\n"}
-              {"\n"}earnings
-              {"\n"}
-              {"\n"}notification
-              {"\n"}
-              {"\n"}leakage.
+              {"\n"}12. SAMPLE REAL DEVICE TESTS
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}7. OFFLINE RECOVERY
+              {"\n"}Because only one Android phone is available, do not claim every partner has
+              {"\n"}been physically tested.
+              {"\n"}
+              {"\n"}Instead:
+              {"\n"}- test multiple different existing partners on the real phone
+              {"\n"}- test both Real and Trial
+              {"\n"}- verify account isolation after logout/login
+              {"\n"}- verify the universal database/query path
+              {"\n"}- verify a brand-new partner
+              {"\n"}
+              {"\n"}Then separately state:
+              {"\n"}\"Population-wide code/database audit\"
+              {"\n"}and
+              {"\n"}\"Real-device sampled validation\"
+              {"\n"}
+              {"\n"}Do not confuse the two.
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}For Vikram:
-              {"\n"}
-              {"\n"}close Partner App completely.
-              {"\n"}
-              {"\n"}Admin assignment already exists.
-              {"\n"}
-              {"\n"}Reopen/login.
-              {"\n"}
-              {"\n"}The assignment must appear from the authoritative database even if the
-              {"\n"}
-              {"\n"}original realtime event was missed.
+              {"\n"}13. BRAND-NEW PARTNER TEST
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}8. REALTIME
+              {"\n"}Create one new partner account.
+              {"\n"}No manual token or notification database setup.
+              {"\n"}Login on the latest Partner APK.
+              {"\n"}
+              {"\n"}Expected automatically:
+              {"\n"}FCM registration
+              {"\n"}Realtime
+              {"\n"}initial assignment sync
+              {"\n"}Home
+              {"\n"}Available
+              {"\n"}Route
+              {"\n"}Map
+              {"\n"}Earnings
+              {"\n"}Notifications
+              {"\n"}
+              {"\n"}Admin assigns a new booking.
+              {"\n"}
+              {"\n"}Expected:
+              {"\n"}assignment immediately appears
+              {"\n"}in-app notification
+              {"\n"}Home update
+              {"\n"}Route update
+              {"\n"}Map update
+              {"\n"}Earnings update
+              {"\n"}FCM push if valid
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}While Vikram is logged in:
-              {"\n"}
-              {"\n"}Admin creates another fresh assignment.
-              {"\n"}
-              {"\n"}Verify without refresh:
-              {"\n"}
-              {"\n"}realtime event received
-              {"\n"}
-              {"\n"}query refreshed
-              {"\n"}
-              {"\n"}assignment appears
-              {"\n"}
-              {"\n"}Home updates
-              {"\n"}
-              {"\n"}Daily Route updates
+              {"\n"}14. UNIVERSAL ACCEPTANCE TEST
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}9. REQUIRED FINAL REPORT
+              {"\n"}The exact same functions/components must handle:
+              {"\n"}Deepak
+              {"\n"}Vikram
+              {"\n"}Imran
+              {"\n"}Aarav
+              {"\n"}all remaining partners
+              {"\n"}future partners
+              {"\n"}
+              {"\n"}No partner-specific configuration.
               {"\n"}
               {"\n"}==================================================
               {"\n"}
-              {"\n"}Return:
+              {"\n"}15. FINAL REPORT
               {"\n"}
-              {"\n"}PARTNER | DB ASSIGNMENT | IN-APP | HOME | ROUTE | MAP | EARNINGS | FCM PUSH
+              {"\n"}==================================================
               {"\n"}
-              {"\n"}Deepak:
+              {"\n"}TOTAL CURRENT PARTNERS = 26
+              {"\n"}REAL = 17
+              {"\n"}TRIAL = 9
+              {"\n"}UNIVERSAL CODE PATH = PASS
+              {"\n"}ALL EXISTING PARTNERS SUPPORTED = PASS
+              {"\n"}FUTURE PARTNER AUTO-PROVISIONING = PASS
+              {"\n"}NEW PARTNER TEST = PASS
+              {"\n"}REAL DEVICE SAMPLE = PASS
               {"\n"}
-              {"\n"}____
+              {"\n"}Also provide the list/count of partners who have:
+              {"\n"}TOKEN MISSING = 24
+              {"\n"}LOGIN REQUIRED = 0
+              {"\n"}DATA ERROR = 0
               {"\n"}
-              {"\n"}Vikram:
-              {"\n"}
-              {"\n"}____
-              {"\n"}
-              {"\n"}Imran:
-              {"\n"}
-              {"\n"}____
-              {"\n"}
-              {"\n"}Most important:
-              {"\n"}
-              {"\n"}FCM PUSH = actual physical Android notification received.
-              {"\n"}
-              {"\n"}Do NOT classify FCM as PASS from database metadata alone.
-              {"\n"}
-              {"\n"}HOME/ROUTE/EARNINGS = actual visible app update.
-              {"\n"}
-              {"\n"}Do NOT classify them as PASS merely because the architecture should update
-              {"\n"}
-              {"\n"}them.
+              {"\n"}Do NOT manually alter those records just to improve the statistics.
               {"\n"}
               {"\n"}==================================================
               {"\n"}
               {"\n"}FINAL ACCEPTANCE
               {"\n"}
-              {"\n"}The assignment system is fully fixed only when at least:
+              {"\n"}The fix is NOT considered \"Deepak/Vikram/Imran working\".
               {"\n"}
-              {"\n"}Vikram
+              {"\n"}The implementation is considered complete only when:
+              {"\n"}ANY CURRENT PARTNER
+              {"\n"}OR
+              {"\n"}ANY FUTURE PARTNER
+              {"\n"}can:
+              {"\n"}LOGIN
+              {"\n"}→ become a fully operational Partner
+              {"\n"}→ receive Admin assignment
+              {"\n"}→ see it in-app
+              {"\n"}→ Home updates
+              {"\n"}→ Route updates
+              {"\n"}→ Map updates
+              {"\n"}→ Earnings updates
+              {"\n"}→ notification appears
+              {"\n"}→ push works when a valid token exists.
               {"\n"}
-              {"\n"}+
+              {"\n"}ONE UNIVERSAL IMPLEMENTATION FOR ALL PARTNERS.
               {"\n"}
-              {"\n"}Imran
-              {"\n"}
-              {"\n"}+
-              {"\n"}
-              {"\n"}one additional non-Deepak partner
-              {"\n"}
-              {"\n"}actually receive and DISPLAY the Admin assignment on the real Partner APK,
-              {"\n"}
-              {"\n"}and their Home / Daily Route / Earnings update accordingly.
-              {"\n"}
-              {"\n"}The database already passes.
-              {"\n"}
-              {"\n"}Now prove the physical Partner App.
+              {"\n"}NO SPECIAL CASES.
             </div>
           </div>
         </div>
