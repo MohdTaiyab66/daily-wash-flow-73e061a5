@@ -140,7 +140,7 @@ function AuthPage() {
       console.log("[PARTNER-AUTH:SUBMIT_OTP_CALLED]", { code });
       console.log("[PARTNER-AUTH:05] OTP_VERIFY_STARTED", { phone, code });
       const role = isAdminLogin ? "admin" : "partner";
-      const prepared = await prepareLogin({ data: { phone, otp: code, role, fullName: "" } });
+      const prepared = await preparedLogin({ data: { phone, otp: code, role, fullName: "" } });
       const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
         email: prepared.email,
         password: prepared.password,
