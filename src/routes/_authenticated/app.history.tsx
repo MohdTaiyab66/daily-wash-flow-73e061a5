@@ -5,8 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Calendar, Car, IndianRupee, MapPin } from "lucide-react";
-
 import { PartnerShell } from "@/components/partner/PartnerShell";
+import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 
 export const Route = createFileRoute("/_authenticated/app/history")({
   component: () => (
