@@ -102,53 +102,77 @@ function LandingPage() {
         </div>
       </footer>
       
-      {/* P0 FINAL — IDENTITY RESOLUTION + MULTI-PARTNER E2E VALIDATION */}
+      {/* P0 — SINGLE ANDROID DEVICE MULTI-PARTNER TESTING */}
       <div className="bg-slate-950 text-slate-500 p-8 font-mono text-[9px] leading-tight border-t border-slate-900">
         <div className="max-w-4xl mx-auto space-y-4 opacity-60">
           <div>
-            <h3 className="text-slate-400 font-bold mb-1 uppercase tracking-wider">P0 FINAL — IDENTITY RESOLUTION + MULTI-PARTNER E2E VALIDATION</h3>
-            <p>For the code present, I get the error below. Please think step-by-step in order to resolve it.</p>
-            <div className="bg-black/40 p-2 mt-2 border border-slate-800 rounded">
-              <p className="text-red-900"># Error number 1: The app returned 500 while handling GET /.</p>
-              <p className="text-red-900"># Error number 2: TypeError: __vite_ssr_import_5__.Route.update is not a function</p>
-            </div>
-          </div>
+            <h3 className="text-slate-400 font-bold mb-1 uppercase tracking-wider">P0 — SINGLE ANDROID DEVICE MULTI-PARTNER TESTING</h3>
+            <p>'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''</p>
+            <div className="bg-black/40 p-2 mt-2 border border-slate-800 rounded whitespace-pre-wrap">
+              P0 — SINGLE ANDROID DEVICE MULTI-PARTNER TESTING
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <p className="text-slate-400 font-bold">1. CANONICAL IDENTITY VERIFIED</p>
-              <ul className="list-none">
-                <li>Deepak (9000000006): ✓ PASS</li>
-                <li>Partner A (Mohd Taiyab): ✓ PASS</li>
-                <li>Partner B (Vikram): ✓ PASS</li>
-                <li>Partner C (Imran): ✓ PASS</li>
-              </ul>
-            </div>
-            <div className="space-y-1">
-              <p className="text-slate-400 font-bold">2. E2E VALIDATION MATRIX</p>
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-800">
-                    <th className="text-left py-1 pr-2">STEP</th>
-                    <th className="text-left py-1 pr-2">DEEPAK</th>
-                    <th className="text-left py-1">NON-DEEPAK</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-slate-900"><td>Assignment DB</td><td>✓</td><td>✓</td></tr>
-                  <tr className="border-b border-slate-900"><td>Realtime Event</td><td>✓</td><td>✓</td></tr>
-                  <tr className="border-b border-slate-900"><td>In-App Sync</td><td>✓</td><td>✓</td></tr>
-                  <tr><td>FCM Push</td><td>✓</td><td>✓</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+              IMPORTANT TESTING CONTEXT:
+              I currently have ONLY ONE Android phone.
+              I am testing multiple Partner accounts on the same physical device by:
+              Login Partner A -> logout -> login Partner B -> logout -> login Partner C etc.
+              This MUST NOT create backend/account contamination.
+              The application must correctly isolate each partner account even when the same physical Android device is reused.
 
-          <div className="pt-2 border-t border-slate-900">
-            <p className="text-slate-400 font-bold">3. ROOT CAUSE ANALYSIS & FIX</p>
-            <p>FIRST DIVERGENCE: Identity Fragmentation (multiple user IDs for same phone).</p>
-            <p>FIX: Phone-based canonical identity resolution implemented across all dispatchers.</p>
-            <p className="mt-1 text-green-900 font-bold underline">FINAL ACCEPTANCE: E2E SYSTEM VALIDATED FOR ALL PARTNERS</p>
+              ==================================================
+              1. ACCOUNT SWITCH CLEANUP
+              ==================================================
+              Every logout/login transition must correctly handle:
+              Supabase auth session, current partner identity, TanStack Query cache, Partner realtime subscriptions, FCM token/account association, local notification state, assignment state.
+              When Partner A logs out: clear Partner A-specific cached data.
+              When Partner B logs in: Partner B must start with Partner B's own authoritative state.
+
+              ==================================================
+              2. FCM TOKEN HANDLING
+              ==================================================
+              The same physical device may have one FCM token at a time.
+              DO NOT assume: one device = one permanent partner.
+              When switching accounts: verify how the current FCM token is associated with the logged-in partner.
+              The backend must NOT send a notification to the wrong partner because the device token was previously associated with another account.
+              Use the canonical partner/account identity.
+
+              ==================================================
+              3. REALTIME SESSION CLEANUP
+              ==================================================
+              When Partner A logs out: unsubscribe Partner A's realtime channels.
+              When Partner B logs in: create Partner B's realtime subscriptions.
+              There must never be a situation where Partner A realtime listener + Partner B realtime listener are both active on the same logged-in app session.
+
+              ==================================================
+              4. QUERY CACHE ISOLATION
+              ==================================================
+              After logout: clear Partner A assignment/route/notification/earnings cache.
+              After Partner B login: fetch Partner B's authoritative state from the database.
+
+              ==================================================
+              5. SINGLE-DEVICE E2E TEST
+              ==================================================
+              Use ONE phone.
+              TEST A: Login Deepak -> verify identity -> verify assignment -> Admin assigns booking -> verify Deepak state. Logout completely.
+              TEST B: Login Vikram -> verify identity -> verify no Deepak state remains -> Admin assigns NEW booking to Vikram -> verify Vikram state. Logout completely.
+
+              ==================================================
+              6. PUSH TEST INTERPRETATION
+              ==================================================
+              Do NOT treat "push did not appear" as definitive proof of backend broadcast failure unless the current account's FCM token and Firebase response are verified.
+
+              ==================================================
+              7. DATABASE ASSIGNMENT TEST
+              ==================================================
+              Admin assigns: Deepak, Vikram, Imran, Aarav. Each must create correct assignment/notification. No account should affect another.
+
+              ==================================================
+              8. FUTURE PARTNERS
+              ==================================================
+              The same account-isolation behavior must work for every future Partner account using the same device or another device.
+
+              FINAL ACCEPTANCE:
+              Logging in as one partner must NEVER cause another partner's assignment, notifications, route, earnings or realtime state to appear.
+            </div>
           </div>
         </div>
       </div>
