@@ -119,18 +119,17 @@ function HomePage() {
 
   const assignment = todayData?.assignment ?? null;
   const today = todayData?.today ?? [];
-  const completed = todayData?.completedToday ?? 0;
+  const completed = todayData?.assignmentCompleted ?? 0;
   const unavailable = todayData?.unavailableToday ?? 0;
   const needWash = todayData?.needWashToday ?? 0;
-  const total = todayData?.assignmentTotalCustomers || 0;
-  const remaining = todayData?.remainingToday ?? 0;
-
+  const total = todayData?.assignmentTotalCustomers ?? 0;
+  const remaining = Math.max(0, total - completed - unavailable);
 
   const earnedSoFar = todayData?.actualEarnedToday ?? 0;
-
-  const potentialDailyEarnings = todayData?.potentialDailyEarnings ?? 0;
-  const potentialMonthlyEarnings = todayData?.potentialMonthlyEarnings ?? 0;
+  const potentialDailyEarnings = todayData?.expectedDailyEarnings ?? 0;
+  const potentialMonthlyEarnings = todayData?.expectedMonthlyEarnings ?? 0;
   const targetCustomers = todayData?.targetCars ?? 0;
+
   
   const inProgressService = today.find(s => s.status === 'in_progress' || (s.started_at && !s.completed_at && s.status !== 'unavailable'));
   const allDone = total > 0 && remaining === 0;

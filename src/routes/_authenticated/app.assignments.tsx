@@ -79,6 +79,7 @@ function AssignmentsPage() {
 
   const todayQuery = useTodayAssignment();
   const activeAssignment = todayQuery.data?.assignment ?? null;
+
   const totalCustomers = todayQuery.data?.assignmentTotalCustomers ?? 0;
   const completedOverall = todayQuery.data?.assignmentCompleted ?? 0;
 
