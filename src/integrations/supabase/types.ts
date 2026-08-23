@@ -6618,14 +6618,19 @@ export type Database = {
         }
         Returns: undefined
       }
-      admin_assign_partner_to_booking: {
-        Args: {
-          p_admin_id?: string
-          p_booking_id: string
-          p_partner_id: string
-        }
-        Returns: Json
-      }
+      admin_assign_partner_to_booking:
+        | {
+            Args: { p_booking_id: string; p_partner_id: string }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_admin_id?: string
+              p_booking_id: string
+              p_partner_id: string
+            }
+            Returns: Json
+          }
       admin_cancel_assignment: {
         Args: { p_assignment_id: string; p_note?: string }
         Returns: undefined
@@ -7199,23 +7204,18 @@ export type Database = {
       get_partner_work: {
         Args: { p_partner_id: string }
         Returns: {
-          address: string
           assignment_id: string
-          assignment_status: string
           booking_id: string
-          booking_status: string
-          customer_id: string
+          contact_number: string
           customer_name: string
-          customer_phone: string
-          earning_value: number
-          location_lat: number
-          location_lng: number
+          latitude: number
+          longitude: number
+          rate_per_car: number
           scheduled_date: string
-          scheduled_time: string
           service_id: string
-          service_status: Database["public"]["Enums"]["service_status"]
-          vehicle_id: string
-          vehicle_name: string
+          status: Database["public"]["Enums"]["service_status"]
+          time_slot: string
+          vehicle_model: string
           vehicle_number: string
         }[]
       }
