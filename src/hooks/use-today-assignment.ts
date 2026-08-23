@@ -119,7 +119,6 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   const cCount = today.filter((s: any) => s.status === "completed").length;
   const uCount = today.filter((s: any) => s.status === "unavailable").length;
 
-  
   // Potential and actual earnings logic
   const actualEarnedToday = today
     .filter((s: any) => s.status === "completed")
@@ -129,7 +128,6 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   
   const uniqueVehicles = new Set(today.map((s: any) => s.vehicle_id).filter(Boolean)).size;
 
-  const uniqueVehicles = new Set(today.map((s: any) => s.vehicle_id).filter(Boolean)).size;
 
 
   return {
