@@ -83,16 +83,8 @@ function AssignmentsPage() {
   const totalCustomers = todayQuery.data?.assignmentTotalCustomers ?? 0;
   const completedOverall = todayQuery.data?.assignmentCompleted ?? 0;
 
-  const { data: partner } = useQuery({
-    queryKey: ["me-partner-builder"],
-    queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return null;
-      const { data } = await supabase.from("partners")
-        .select("id,home_area").eq("id", u.user.id).maybeSingle();
-      return data;
-    },
-  });
+  const { data: partner } = usePartner();
+
 
   const { data: settings } = useQuery({
     queryKey: ["assignment-settings-v3"],
