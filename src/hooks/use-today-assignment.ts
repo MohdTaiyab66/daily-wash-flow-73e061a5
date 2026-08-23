@@ -80,34 +80,45 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   const todayStr = getTodayIST();
   const isMonday = new Date().getDay() === 1;
 
+  // Get active assignment details for metrics FIRST
+  // This ensures we have the assignment record even if get_partner_work returns empty
+  const { data: activeAssignment } = await supabase
+    .from("assignments")
+    .select("*")
+    .eq("partner_id", partnerId)
+    .eq("status", "active")
+    .order("start_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   // Map RPC results to expected UI shape
   const today = ((work as any[]) ?? []).map((w: any) => ({
     id: w.service_id,
     assignment_id: w.assignment_id,
-    status: w.service_status,
+    status: w.status || w.service_status,
     scheduled_date: w.scheduled_date,
-    scheduled_time: w.scheduled_time,
+    scheduled_time: w.time_slot || w.scheduled_time,
     booking_id: w.booking_id,
     customer_id: w.customer_id,
     vehicle_id: w.vehicle_id,
-    rate_per_car: w.earning_value,
+    rate_per_car: w.rate_per_car || w.earning_value,
     customers: {
       full_name: w.customer_name,
-      phone: w.customer_phone,
-      latitude: w.location_lat,
-      longitude: w.location_lng,
+      phone: w.contact_number || w.customer_phone,
+      latitude: w.latitude || w.location_lat,
+      longitude: w.longitude || w.location_lng,
       address_line: w.address
     },
     vehicles: {
-      make: w.vehicle_name?.split(' ')[0] || '',
-      model: w.vehicle_name?.split(' ').slice(1).join(' ') || '',
+      make: w.vehicle_model?.split(' ')[0] || w.vehicle_name?.split(' ')[0] || '',
+      model: w.vehicle_model?.split(' ').slice(1).join(' ') || w.vehicle_name?.split(' ').slice(1).join(' ') || '',
       registration_number: w.vehicle_number
     }
   }));
 
   const cCount = today.filter((s: any) => s.status === "completed").length;
-  const uCount = today.filter((s: any) => s.status === "unavailable").length; // Need Wash logic handled by RPC/status logic
-  
+  const uCount = today.filter((s: any) => s.status === "unavailable").length;
+
   // Potential and actual earnings logic
   const actualEarnedToday = today
     .filter((s: any) => s.status === "completed")
@@ -117,15 +128,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   
   const uniqueVehicles = new Set(today.map((s: any) => s.vehicle_id).filter(Boolean)).size;
 
-  // Get active assignment details for metrics
-  const { data: activeAssignment } = await supabase
-    .from("assignments")
-    .select("*")
-    .eq("partner_id", partnerId)
-    .eq("status", "active")
-    .order("start_date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+
 
   return {
     assignment: activeAssignment,
@@ -140,11 +143,12 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     actualEarnedToday: isMonday ? 0 : actualEarnedToday,
     potentialDailyEarnings,
     potentialMonthlyEarnings: potentialDailyEarnings * 26,
-    assignmentTotalCustomers: uniqueVehicles,
+    assignmentTotalCustomers: activeAssignment?.target_cars || uniqueVehicles,
     assignmentCompleted: cCount,
     targetCars: activeAssignment?.target_cars || uniqueVehicles,
-    expectedDailyEarnings: potentialDailyEarnings,
-    expectedMonthlyEarnings: potentialDailyEarnings * 26,
+    expectedDailyEarnings: activeAssignment ? (activeAssignment.target_cars * (activeAssignment.rate_per_car || 17)) : potentialDailyEarnings,
+    expectedMonthlyEarnings: activeAssignment ? (activeAssignment.target_cars * (activeAssignment.rate_per_car || 17) * 26) : potentialDailyEarnings * 26,
+
     fetchedAt: Date.now(),
   };
 }

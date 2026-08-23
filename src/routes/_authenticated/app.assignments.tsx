@@ -1,7 +1,9 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { usePartner } from "@/hooks/use-partner";
 import { supabase } from "@/integrations/supabase/client";
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -79,19 +81,12 @@ function AssignmentsPage() {
 
   const todayQuery = useTodayAssignment();
   const activeAssignment = todayQuery.data?.assignment ?? null;
+
   const totalCustomers = todayQuery.data?.assignmentTotalCustomers ?? 0;
   const completedOverall = todayQuery.data?.assignmentCompleted ?? 0;
 
-  const { data: partner } = useQuery({
-    queryKey: ["me-partner-builder"],
-    queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return null;
-      const { data } = await supabase.from("partners")
-        .select("id,home_area").eq("id", u.user.id).maybeSingle();
-      return data;
-    },
-  });
+  const { data: partner } = usePartner();
+
 
   const { data: settings } = useQuery({
     queryKey: ["assignment-settings-v3"],
