@@ -39,6 +39,17 @@ type Step = "phone" | "otp" | "name";
 const OTP_LENGTH = 4; // Use 4-digit OTP for both Admin and Partner in development/preview.
 const DEV_OTP = "1234";
 
+function errorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message.trim()) return error.message;
+  if (typeof error === "string" && error.trim()) return error;
+  if (error && typeof error === "object") {
+    const candidate = error as { message?: unknown; error_description?: unknown };
+    if (typeof candidate.message === "string" && candidate.message.trim()) return candidate.message;
+    if (typeof candidate.error_description === "string" && candidate.error_description.trim()) return candidate.error_description;
+  }
+  return fallback;
+}
+
 // Phone-as-email pattern (phone provider is disabled on this project).
 
 
@@ -163,7 +174,7 @@ function AuthPage() {
       toast.success(`Dev mode: use ${DEV_OTP}`);
       setTimeout(() => otpRefs.current[0]?.focus(), 50);
     } catch (e: any) {
-      toast.error(e?.message || "Could not send the code. Please try again.");
+      toast.error(errorMessage(e, "Could not send the code. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -190,15 +201,19 @@ function AuthPage() {
       // OTP verified successfully
 
       if (!isAdminLogin) {
-        const uid = signInData.session.user.id;
-        const { data: partner } = await supabase.from("partners").select("full_name").eq("id", uid).maybeSingle();
-        if (!partner?.full_name) { 
-          setLoading(false); 
-          setStep("name"); 
-          // Show profile completion if needed
-          return; 
+        // Authentication is complete at this point. Resolve the operational
+        // partner separately; partners created before OTP identities may have
+        // a different row id and must not be treated as a failed login.
+        const { data: resolvedPartnerId, error: resolveError } = await supabase.rpc("resolve_partner_id", {
+          u_id: signInData.session.user.id,
+        } as any);
+        if (resolveError) throw new Error(resolveError.message);
+        if (!resolvedPartnerId) {
+          setLoading(false);
+          setStep("name");
+          return;
         }
-        await ensureStaffRole("partner", partner.full_name);
+        await ensureStaffRole("partner");
       } else {
         await ensureStaffRole("admin");
       }
@@ -208,7 +223,7 @@ function AuthPage() {
       haptic([40, 40, 40]);
       setOtpDigits(Array(otpLength).fill(""));
       setTimeout(() => otpRefs.current[0]?.focus(), 30);
-      toast.error(e?.message || "Login failed. Please try again.");
+      toast.error(errorMessage(e, "Login failed. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -271,7 +286,7 @@ function AuthPage() {
       // Navigation after profile completion
       navigate({ to: nextRoute as any });
     } catch (e: any) {
-      toast.error(e?.message || "Could not complete sign in");
+      toast.error(errorMessage(e, "Could not complete sign in"));
     } finally {
       setLoading(false);
     }
