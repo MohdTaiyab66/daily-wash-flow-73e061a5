@@ -55,7 +55,19 @@ async function findAuthUserByEmail(supabaseAdmin: any, email: string) {
   const target = email.toLowerCase();
 
   for (let page = 1; page <= 20; page += 1) {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+    let result: any;
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        result = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+        if (!result?.error) break;
+        lastError = result.error;
+      } catch (error) {
+        lastError = error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+    }
+    const { data, error } = result ?? { data: null, error: lastError };
     if (error) throw new Error(error.message);
     const found = data?.users?.find((user: any) => String(user.email ?? "").toLowerCase() === target);
     if (found) return found;
@@ -68,7 +80,19 @@ async function findAuthUserByEmail(supabaseAdmin: any, email: string) {
 async function findAuthUsersByPhone(supabaseAdmin: any, phone: string) {
   const matches: any[] = [];
   for (let page = 1; page <= 20; page += 1) {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+    let result: any;
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        result = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+        if (!result?.error) break;
+        lastError = result.error;
+      } catch (error) {
+        lastError = error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+    }
+    const { data, error } = result ?? { data: null, error: lastError };
     if (error) throw new Error(error.message);
     for (const user of data?.users ?? []) {
       const metaPhone = String(user.user_metadata?.phone ?? user.raw_user_meta_data?.phone ?? "").replace(/\D/g, "");
