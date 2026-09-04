@@ -171,7 +171,7 @@ function CustomerHome() {
 
   const servicesQ = useQuery({
     queryKey: ["service-catalog"],
-    staleTime: 1000 * 30, // Reduced to 30s
+    staleTime: 1000 * 60 * 10,
     queryFn: async (): Promise<Service[]> => {
       const start = Date.now();
       
@@ -203,7 +203,7 @@ function CustomerHome() {
 
   const imagesQ = useQuery({
     queryKey: ["customer-promo-images"],
-    staleTime: 1000 * 30, // Reduced to 30s for freshness
+    staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 5,
     queryFn: async () => {
       try {
