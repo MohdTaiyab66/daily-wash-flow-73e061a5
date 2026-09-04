@@ -150,64 +150,6 @@ function LandingPage() {
           </div>
         </div>
       </footer>
-      
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/80 pointer-events-none overflow-y-auto max-h-[50vh] z-[100]">
-        <div className="text-[10px] font-mono whitespace-pre text-neutral-300 max-w-4xl mx-auto">
-          {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
-                                            P0 — RESTORE LOST PARTNER ASSIGNMENT
- 
-FIX STATE INCONSISTENCY
-
-IDENTIFIED: Failure C (Home says "No Active Assignment" while DB has active assignment).
-
-ROOT CAUSE: Operational screens were deriving state strictly from today's assigned services via get_partner_work. If an assignment existed but services for today hadn't been generated (or query failed), the Partner App fell back to "Build Your Plan".
-
-==================================================
-
-1. AUTHORITATIVE STATE FIX
-
-==================================================
-
-1. useTodayAssignment hook now performs a two-stage resolution:
-   a. Fetch active assignments from assignments table (Authoritative Status).
-   b. Map services from get_partner_work (Operational Data).
-
-2. metrics are now derived from the active assignment record (target_cars, rate_per_car) rather than just counting service rows.
-
-3. Home Page UI logic updated to prioritize the assignment record:
-   const assignment = todayData?.assignment ?? null;
-   // Show Builder ONLY if truly no active assignment exists.
-
-==================================================
-
-2. VERIFICATION (IST 05:25)
-
-==================================================
-
-PARTNER (Taiyab):    ACTIVE ASSIGNMENT (PASS)
-PARTNER (Vikram):    ACTIVE ASSIGNMENT (PASS)
-PARTNER (Imran):     ACTIVE ASSIGNMENT (PASS)
-HOME SUMMARY:        24 CUSTOMERS / ₹10,200 (PASS)
-BUILDER GUARD:       PREVENTS DUPLICATES (PASS)
-IDENTITY RESOLVER:   resolve_partner_id (PASS)
-
-==================================================
-
-3. ARCHITECTURAL DIVERGENCE FIXED
-
-==================================================
-
-C. DB status says Active, UI says No Assignment (State Inconsistency)
-
-==================================================
-
-FINAL ACCEPTANCE
-
-All Partner screens now consume a single source of truth for assignment status. The "Lost Assignment" bug is resolved by decoupling visual status from individual service generation, ensuring Partners always see their committed work plan.`}
-        </div>
-      </div>
     </div>
   );
 }
