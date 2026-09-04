@@ -4,6 +4,16 @@ import { Shield, Car, CheckCircle2, MapPin, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 export const Route = createFileRoute('/')({
+  head: () => ({
+    meta: [
+      { title: 'Urban Wash — Daily Doorstep Car Care in Lucknow' },
+      { name: 'description', content: 'Premium daily car cleaning at your doorstep in Lucknow. Book as a customer, work as a partner, or manage operations in the admin panel.' },
+      { property: 'og:title', content: 'Urban Wash — Daily Doorstep Car Care in Lucknow' },
+      { property: 'og:description', content: 'Premium daily car cleaning at your doorstep in Lucknow. Book as a customer, work as a partner, or manage operations.' },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:card', content: 'summary_large_image' },
+    ],
+  }),
   beforeLoad: async () => {
     // P0 — FIX PARTNER AUTH REDIRECT
     // If a partner or admin is already logged in, they should NOT see the public landing page.
@@ -78,6 +88,41 @@ function LandingPage() {
       <main>
         <Hero />
         
+        {/* App Entry Points */}
+        <section className="py-16 px-4">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-2xl font-bold text-center mb-8">Choose your app</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Link to="/c" className="group p-6 rounded-2xl border bg-card hover:border-primary hover:shadow-md transition-all">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4">
+                  <Car className="h-6 w-6" />
+                </div>
+                <h3 className="text-lg font-bold mb-1">Customer App</h3>
+                <p className="text-sm text-muted-foreground mb-4">Book washes, manage vehicles and track your subscription.</p>
+                <Button size="sm" className="w-full">Open Customer App</Button>
+              </Link>
+
+              <Link to="/auth" className="group p-6 rounded-2xl border bg-card hover:border-primary hover:shadow-md transition-all">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4">
+                  <CheckCircle2 className="h-6 w-6" />
+                </div>
+                <h3 className="text-lg font-bold mb-1">Partner App</h3>
+                <p className="text-sm text-muted-foreground mb-4">Daily route, assignments, service proof and earnings.</p>
+                <Button size="sm" variant="outline" className="w-full">Open Partner App</Button>
+              </Link>
+
+              <Link to="/admin" className="group p-6 rounded-2xl border bg-card hover:border-primary hover:shadow-md transition-all">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4">
+                  <Shield className="h-6 w-6" />
+                </div>
+                <h3 className="text-lg font-bold mb-1">Admin Panel</h3>
+                <p className="text-sm text-muted-foreground mb-4">Operations console for bookings, partners and revenue.</p>
+                <Button size="sm" variant="outline" className="w-full">Open Admin Panel</Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* Features Preview */}
         <section className="py-20 bg-muted/30">
           <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -115,64 +160,6 @@ function LandingPage() {
           </div>
         </div>
       </footer>
-      
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-black/80 pointer-events-none overflow-y-auto max-h-[50vh] z-[100]">
-        <div className="text-[10px] font-mono whitespace-pre text-neutral-300 max-w-4xl mx-auto">
-          {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
-                                            P0 — RESTORE LOST PARTNER ASSIGNMENT
- 
-FIX STATE INCONSISTENCY
-
-IDENTIFIED: Failure C (Home says "No Active Assignment" while DB has active assignment).
-
-ROOT CAUSE: Operational screens were deriving state strictly from today's assigned services via get_partner_work. If an assignment existed but services for today hadn't been generated (or query failed), the Partner App fell back to "Build Your Plan".
-
-==================================================
-
-1. AUTHORITATIVE STATE FIX
-
-==================================================
-
-1. useTodayAssignment hook now performs a two-stage resolution:
-   a. Fetch active assignments from assignments table (Authoritative Status).
-   b. Map services from get_partner_work (Operational Data).
-
-2. metrics are now derived from the active assignment record (target_cars, rate_per_car) rather than just counting service rows.
-
-3. Home Page UI logic updated to prioritize the assignment record:
-   const assignment = todayData?.assignment ?? null;
-   // Show Builder ONLY if truly no active assignment exists.
-
-==================================================
-
-2. VERIFICATION (IST 05:25)
-
-==================================================
-
-PARTNER (Taiyab):    ACTIVE ASSIGNMENT (PASS)
-PARTNER (Vikram):    ACTIVE ASSIGNMENT (PASS)
-PARTNER (Imran):     ACTIVE ASSIGNMENT (PASS)
-HOME SUMMARY:        24 CUSTOMERS / ₹10,200 (PASS)
-BUILDER GUARD:       PREVENTS DUPLICATES (PASS)
-IDENTITY RESOLVER:   resolve_partner_id (PASS)
-
-==================================================
-
-3. ARCHITECTURAL DIVERGENCE FIXED
-
-==================================================
-
-C. DB status says Active, UI says No Assignment (State Inconsistency)
-
-==================================================
-
-FINAL ACCEPTANCE
-
-All Partner screens now consume a single source of truth for assignment status. The "Lost Assignment" bug is resolved by decoupling visual status from individual service generation, ensuring Partners always see their committed work plan.`}
-        </div>
-      </div>
     </div>
   );
 }
