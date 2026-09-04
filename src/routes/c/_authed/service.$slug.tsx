@@ -87,11 +87,19 @@ function ServiceDetail() {
   const navigate = useNavigate();
   const search = Route.useSearch();
 
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+
   const vehiclesQ = useQuery({
     queryKey: ["customer-vehicles"],
+    enabled: hydrated,
+    staleTime: 1000 * 60 * 5,
+    refetchOnMount: "always",
     queryFn: async () => {
-      const { data, error } = await supabase.from("customer_vehicles").select("*");
-      if (error) console.error("[SERVICE] VEHICLES_ERROR", error);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return [] as Vehicle[];
+      const { data, error } = await supabase.from("customer_vehicles").select("*").order("created_at");
+      if (error) throw error;
       return (data ?? []) as Vehicle[];
     }
   });
@@ -99,19 +107,13 @@ function ServiceDetail() {
   const [vehicleId, setVehicleId] = useState<string | null>(search.vehicleId || null);
 
   const vehicle = useMemo(() => {
-    const targetId = search.vehicleId || vehicleId;
-    if (!targetId) {
-      console.error("[VEHICLE-FLOW] P0: No vehicleId in URL or state");
-      return null;
-    }
-    
-    const found = (vehiclesQ.data ?? []).find(v => v.id === targetId);
-    if (!found) {
-      console.error("[VEHICLE-FLOW] P0: Requested vehicle not found in list", targetId);
-    }
-    
-    return found || null;
+    const list = vehiclesQ.data ?? [];
+    if (list.length === 0) return null;
+    const stored = typeof window !== "undefined" ? localStorage.getItem("uw_customer_vehicle") : null;
+    const targetId = search.vehicleId || vehicleId || stored;
+    return list.find((v) => v.id === targetId) ?? list[0];
   }, [vehiclesQ.data, vehicleId, search.vehicleId]);
+
 
 
   useEffect(() => {
