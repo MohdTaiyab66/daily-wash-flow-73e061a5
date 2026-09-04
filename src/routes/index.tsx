@@ -4,6 +4,16 @@ import { Shield, Car, CheckCircle2, MapPin, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 export const Route = createFileRoute('/')({
+  head: () => ({
+    meta: [
+      { title: 'Urban Wash — Daily Doorstep Car Care in Lucknow' },
+      { name: 'description', content: 'Premium daily car cleaning at your doorstep in Lucknow. Book as a customer, work as a partner, or manage operations in the admin panel.' },
+      { property: 'og:title', content: 'Urban Wash — Daily Doorstep Car Care in Lucknow' },
+      { property: 'og:description', content: 'Premium daily car cleaning at your doorstep in Lucknow. Book as a customer, work as a partner, or manage operations.' },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:card', content: 'summary_large_image' },
+    ],
+  }),
   beforeLoad: async () => {
     // P0 — FIX PARTNER AUTH REDIRECT
     // If a partner or admin is already logged in, they should NOT see the public landing page.
