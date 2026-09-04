@@ -65,13 +65,13 @@ function HomePage() {
     ["history"]
   ]);
 
-  // Ensure we refetch on mount to clear any stale cache from previous sessions
+  // Revalidate quietly in the background — cached data stays on screen so the
+  // dashboard never blanks out on re-entry.
   useEffect(() => {
-    todayQuery.refetch();
     qc.invalidateQueries({ queryKey: ["partner-notifications-unread"] });
     qc.invalidateQueries({ queryKey: ["partner-earnings"] });
     qc.invalidateQueries({ queryKey: ["history"] });
-  }, []);
+  }, [qc]);
   
   const todayData = todayQuery.data;
   const hasData = todayData !== undefined;
