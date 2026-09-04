@@ -472,7 +472,7 @@ function ServiceDetail() {
     );
   }
 
-  if (vehiclesQ.isSuccess && !vehicle) {
+  if (hydrated && vehiclesQ.isSuccess && !vehiclesQ.isFetching && !vehicle) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#FAF9F7] px-6 text-center">
         <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100 mb-6 w-full max-w-xs">
