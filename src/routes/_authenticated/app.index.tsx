@@ -113,7 +113,7 @@ function HomePage() {
 
 
 
-  if (!hasData && (todayQuery.isLoading || todayQuery.isFetching) && !todayQuery.isError) {
+  if (!hasData && todayQuery.isLoading && !todayQuery.isError) {
     return <TodayAssignmentSkeleton />;
   }
 
