@@ -23,8 +23,9 @@ export function usePartner() {
       return data;
     },
     refetchOnWindowFocus: false,
-    staleTime: 5_000,
-    refetchOnMount: "always",
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnMount: false,
   });
 }
 
