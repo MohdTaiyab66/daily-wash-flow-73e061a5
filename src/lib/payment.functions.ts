@@ -262,6 +262,15 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
         console.warn("[payment] immediate push dispatch failed (non-fatal)", e);
       }
 
+      // Admin alert — raised here so it never depends on the webhook landing.
+      // The helper is idempotent, so the webhook path cannot duplicate it.
+      try {
+        const { notifyAdminBookingPaid } = await import("@/lib/admin-booking-alert.server");
+        await notifyAdminBookingPaid(data.bookingId, Number(booking.total_amount ?? 0));
+      } catch (e) {
+        console.warn("[payment] admin alert failed (non-fatal)", e);
+      }
+
       await logAttempt({ outcome: "success", metadata: { razorpay_status: payment.status } });
       return result as { ok: boolean; booking_id: string; payment_id: string; subscription_id?: string; queue_id?: string };
     } catch (err: any) {
