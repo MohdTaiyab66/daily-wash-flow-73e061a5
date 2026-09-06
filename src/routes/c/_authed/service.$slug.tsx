@@ -249,6 +249,60 @@ function ServiceDetail() {
     return items.length > 0 ? items.map((i: any) => i.image_url) : (getServiceImage(slug).url ? [getServiceImage(slug).url] : []);
   }, [galleryQ.data, slug]);
 
+  /**
+   * Returns a usable service address id. Falls back to a live re-read and,
+   * for customers who picked a location but never got an address row saved,
+   * creates the default "Home" address from the stored location.
+   */
+  const resolveAddressId = async (): Promise<string | null> => {
+    if (activeAddress?.id) return activeAddress.id;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const uid = session?.user?.id;
+    if (!uid) return null;
+
+    const { data: fresh } = await supabase
+      .from("customer_addresses")
+      .select("*")
+      .order("created_at");
+    if (fresh && fresh.length > 0) {
+      addressesQ.refetch();
+      return ((fresh as Address[]).find((a) => a.is_default) ?? (fresh as Address[])[0]).id;
+    }
+
+    const area = typeof window !== "undefined" ? localStorage.getItem("uw_customer_area") : null;
+    if (!area) return null;
+    const fullAddress = localStorage.getItem("uw_customer_full_address") || area;
+    let geo: any = null;
+    try { geo = JSON.parse(localStorage.getItem("uw_customer_geo") || "null"); } catch { geo = null; }
+
+    const base = {
+      user_id: uid,
+      label: "Home",
+      address_line: fullAddress,
+      area,
+      pincode: geo?.pincode || null,
+      is_default: true,
+    };
+
+    let created = await supabase
+      .from("customer_addresses")
+      .insert({ ...base, latitude: geo?.lat ?? null, longitude: geo?.lng ?? null })
+      .select("id")
+      .single();
+
+    // GPS validation triggers can reject imprecise coordinates — retry without them.
+    if (created.error) {
+      created = await supabase.from("customer_addresses").insert(base).select("id").single();
+    }
+    if (created.error) {
+      console.error("[SERVICE] ADDRESS_CREATE_FAILED", created.error);
+      return null;
+    }
+    addressesQ.refetch();
+    return (created.data as any).id as string;
+  };
+
   const confirm = async () => {
     setDiag(prev => ({
       ...prev,
