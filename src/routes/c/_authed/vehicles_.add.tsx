@@ -30,11 +30,10 @@ import {
 
 export const Route = createFileRoute("/c/_authed/vehicles_/add")({
   ssr: true,
-  validateSearch: (search: Record<string, unknown>) => ({
-    redirect: typeof search.redirect === "string" && search.redirect.startsWith("/")
-      ? (search.redirect as string)
-      : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
+    typeof search.redirect === "string" && search.redirect.startsWith("/")
+      ? { redirect: search.redirect }
+      : {},
   head: () => ({ meta: [{ title: "Add Your Vehicle — Urban Wash" }] }),
   component: AddVehicle,
 });
