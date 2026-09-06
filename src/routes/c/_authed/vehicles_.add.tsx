@@ -30,6 +30,10 @@ import {
 
 export const Route = createFileRoute("/c/_authed/vehicles_/add")({
   ssr: true,
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
+    typeof search.redirect === "string" && search.redirect.startsWith("/")
+      ? { redirect: search.redirect }
+      : {},
   head: () => ({ meta: [{ title: "Add Your Vehicle — Urban Wash" }] }),
   component: AddVehicle,
 });
@@ -49,6 +53,8 @@ const POPULAR_BRANDS = ["Maruti Suzuki", "Hyundai", "Tata", "Mahindra", "Toyota"
 
 function AddVehicle() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
+  const goNext = () => navigate({ to: redirect ?? "/c/home" });
   const qc = useQueryClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -150,6 +156,11 @@ function AddVehicle() {
 
       if (error) throw error;
 
+      // Make the freshly added car the active selection everywhere in the app.
+      if (vehicle) {
+        try { localStorage.setItem("uw_customer_vehicle", vehicle.id); } catch { /* noop */ }
+      }
+
       if (photo && vehicle) {
         const ext = photo.name.split('.').pop();
         const path = `${u.user.id}/${vehicle.id}/${Date.now()}.${ext}`;
@@ -189,7 +200,7 @@ function AddVehicle() {
     } else if (brand) {
       setBrand(null);
     } else {
-      navigate({ to: "/c/home" });
+      goNext();
     }
   };
 
@@ -228,10 +239,10 @@ function AddVehicle() {
             {selected?.make} {selected?.model} is now in your garage.
           </p>
           <Button 
-            onClick={() => navigate({ to: "/c/home" })}
+            onClick={goNext}
             className="mt-12 w-full h-14 rounded-2xl bg-[#1a1a1a] text-white font-black shadow-lg active:scale-95 transition-transform"
           >
-            Go to Home
+            {redirect ? "Continue booking" : "Go to Home"}
           </Button>
         </div>
       ) : (
