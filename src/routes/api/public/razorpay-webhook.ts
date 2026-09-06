@@ -72,42 +72,20 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
         
         console.log(`[PAYMENT-E2E:06] ACTIVATION_SUCCESS booking_id=${booking.id}`);
         
-        // Immediate admin notification and system synchronization
+        // Immediate admin notification (idempotent — the client verification
+        // path may already have raised it for this booking).
+        const { notifyAdminBookingPaid } = await import("@/lib/admin-booking-alert.server");
+        await notifyAdminBookingPaid(booking.id, payment?.amount ? payment.amount / 100 : undefined);
+
+        // Partner fan-out safety net in case the client never called verify.
         try {
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          
-          // Verify customer profile exists for the user
-          const { data: bookingDetails } = await supabaseAdmin.from("bookings").select("user_id").eq("id", booking.id).single();
-          const userId = bookingDetails?.user_id as string;
-          const { data: customer } = await supabaseAdmin.from("customers").select("full_name, area").eq("id", userId).maybeSingle();
-          
-          const title = "DAILY SHINE PAID";
-          const body = `New Daily Shine booking for ${customer?.full_name || 'Customer'} in ${customer?.area || 'unknown area'}.`;
-          
-          console.log(`[ADMIN-BOOKING-E2E] Creating admin notification for booking_id: ${booking.id}`);
-          
-          await supabaseAdmin.from("admin_notifications").insert({
-            category: "bookings",
-            title,
-            body,
-            metadata: { 
-              booking_id: booking.id,
-              customer_name: customer?.full_name,
-              area: customer?.area,
-              amount: payment?.amount ? payment.amount / 100 : 0
-            },
-            link: `/admin/assign-booking/${booking.id}`
-          });
-          
-          const { dispatchAdminNotifications } = await import("@/lib/push/dispatch.server");
-          await dispatchAdminNotifications();
-          console.log(`[ADMIN-BOOKING-E2E] Admin notification dispatched for booking_id: ${booking.id}`);
-        } catch (e) { 
-          console.error("[ADMIN-BOOKING-E2E] admin alert failed", e); 
+          await (supabaseAdmin as any).rpc("sweep_subscription_offers");
+          const { dispatchPendingOffers } = await import("@/lib/push/dispatch.server");
+          await dispatchPendingOffers("immediate:webhook", booking.id);
+        } catch (e) {
+          console.warn("[razorpay-webhook] offer dispatch failed (non-fatal)", e);
         }
-        
-        return Response.json({ ok: true, result: data });
-        
+
         return Response.json({ ok: true, result: data });
       },
     },
