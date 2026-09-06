@@ -477,15 +477,28 @@ function ServiceDetail() {
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#FAF9F7] px-6 text-center">
         <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100 mb-6 w-full max-w-xs">
           <Car className="h-12 w-12 text-[#FF6B00] mx-auto mb-4" />
-          <h2 className="text-[20px] font-black text-[#1a1a1a] mb-2">Vehicle required</h2>
-          <p className="text-[14px] text-[#7A7A7A] mb-4">Please select a vehicle from the home screen before booking this service.</p>
+          <h2 className="text-[20px] font-black text-[#1a1a1a] mb-2">Add your car to continue</h2>
+          <p className="text-[14px] text-[#7A7A7A] mb-4">
+            We need your car details to show the right price and book this service.
+          </p>
         </div>
-        <Button 
-          onClick={() => navigate({ to: "/c/home" })}
+        <Button
+          onClick={() =>
+            navigate({
+              to: "/c/vehicles/add",
+              search: { redirect: `/c/service/${slug}` },
+            })
+          }
           className="bg-[#FF6B00] text-white rounded-full font-black px-10 h-12 w-full max-w-xs shadow-lg shadow-orange-200"
         >
-          Select Vehicle
+          Add your car
         </Button>
+        <button
+          onClick={() => navigate({ to: "/c/home" })}
+          className="mt-4 text-[13px] font-bold text-[#7A7A7A]"
+        >
+          Back to home
+        </button>
       </div>
     );
   }
