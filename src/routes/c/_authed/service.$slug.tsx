@@ -267,14 +267,34 @@ function ServiceDetail() {
       return;
     }
 
-    if (!service || !vehicle || !activeAddress || !slot) {
-      updateDiagStep('validation', 'err', !slot ? "Time slot missing" : "Selections incomplete");
-      toast.error(!slot ? "Please select a time slot." : "Please complete all selections.");
+    if (!slot) {
+      updateDiagStep('validation', 'err', "Time slot missing");
+      toast.error("Please select a time slot.");
+      return;
+    }
+    if (!service) {
+      toast.error("Service details are still loading. Please try again.");
+      return;
+    }
+    if (!vehicle) {
+      toast.error("Please select your car to continue.");
+      return;
+    }
+
+    setSubmitting(true);
+    const addressId = await resolveAddressId();
+    if (!addressId) {
+      setSubmitting(false);
+      updateDiagStep('validation', 'err', "Address missing");
+      toast.error("Please set your service location to continue.");
+      navigate({
+        to: "/c/location/search",
+        search: { returnTo: window.location.pathname + window.location.search },
+      });
       return;
     }
 
     updateDiagStep('validation', 'ok');
-    setSubmitting(true);
 
     try {
       
