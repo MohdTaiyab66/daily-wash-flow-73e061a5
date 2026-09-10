@@ -26,6 +26,7 @@ export type TodayAssignmentData = {
   targetCars: number;
   expectedDailyEarnings: number;
   expectedMonthlyEarnings: number;
+  syncWarning: string | null;
   fetchedAt: number;
 };
 
@@ -52,45 +53,84 @@ function writeCache(d: TodayAssignmentData) {
   try { window.localStorage.setItem(CACHE_KEY, JSON.stringify(d)); } catch { /* noop */ }
 }
 
+const REQUEST_TIMEOUT_MS = 8_000;
+
+async function withTimeout<T>(request: PromiseLike<T>, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve(request),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label}_TIMEOUT`)), REQUEST_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
-  const { data: u, error: uErr } = await supabase.auth.getUser();
-  if (uErr) throw uErr;
-  if (!u.user) {
+  // getSession reads the already-validated local session. getUser performs a
+  // network request and could leave Home on its skeleton indefinitely on
+  // patchy mobile connections.
+  const { data: sessionData, error: sessionError } = await withTimeout(
+    supabase.auth.getSession(),
+    "SESSION",
+  );
+  if (sessionError) throw sessionError;
+  if (!sessionData.session?.user) {
     // Transient: session not hydrated yet. Throw so React Query retries and
     // keeps the last known good data on screen instead of blanking it.
     throw new Error("AUTH_NOT_READY");
   }
 
   // Resolve canonical partner identity using the secure resolver
-  const { data: partnerId, error: pErr } = await supabase.rpc("resolve_partner_id", { u_id: u.user.id } as any);
+  const { data: partnerId, error: pErr } = await withTimeout(
+    supabase.rpc("resolve_partner_id", { u_id: sessionData.session.user.id } as any),
+    "PARTNER_ID",
+  );
   if (pErr) throw pErr;
 
   if (!partnerId) {
     throw new Error("PARTNER_NOT_RESOLVED");
   }
 
-  // AUTHORITATIVE PARTNER WORK SOURCE: Fetch all assigned work for today via RPC
-  const { data: work, error: workErr } = await (supabase.rpc as any)("get_partner_work", { p_partner_id: partnerId });
-  if (workErr) throw workErr;
+  // Resolve the assignment independently from today's route. A broken or slow
+  // service join must never hide a partner's valid active assignment.
+  const assignmentRequest = supabase
+      .from("assignments")
+      .select("*")
+      .eq("partner_id", partnerId)
+      .eq("status", "active")
+      .order("start_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+  const workRequest = (supabase.rpc as any)("get_partner_work", { p_partner_id: partnerId });
+  const [assignmentResult, workResult] = await Promise.allSettled([
+    withTimeout(assignmentRequest, "ACTIVE_ASSIGNMENT"),
+    withTimeout(workRequest, "PARTNER_WORK"),
+  ]);
 
-  const todayStr = getTodayIST();
-  const isMonday = new Date().getDay() === 1;
-
-  // Get active assignment details for metrics FIRST
-  // This ensures we have the assignment record even if get_partner_work returns empty
-  const { data: activeAssignment, error: aErr } = await supabase
-    .from("assignments")
-    .select("*")
-    .eq("partner_id", partnerId)
-    .eq("status", "active")
-    .order("start_date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  if (assignmentResult.status === "rejected") throw assignmentResult.reason;
+  const { data: activeAssignment, error: aErr } = assignmentResult.value;
   // Surface the failure instead of silently rendering "no assignment".
   if (aErr) throw aErr;
 
+  let work: any[] = [];
+  let syncWarning: string | null = null;
+  if (workResult.status === "fulfilled" && !workResult.value.error) {
+    work = (workResult.value.data as any[]) ?? [];
+  } else {
+    const workFailure = workResult.status === "rejected" ? workResult.reason : workResult.value.error;
+    if (!activeAssignment) throw workFailure;
+    syncWarning = workFailure instanceof Error ? workFailure.message : "PARTNER_WORK_UNAVAILABLE";
+  }
+
+  const todayStr = getTodayIST();
+  const isMonday = new Date(`${todayStr}T12:00:00+05:30`).getDay() === 1;
+
   // Map RPC results to expected UI shape
-  const today = ((work as any[]) ?? []).map((w: any) => ({
+  const today = work.map((w: any) => ({
     id: w.service_id,
     assignment_id: w.assignment_id,
     status: w.status || w.service_status,
@@ -146,7 +186,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     targetCars: activeAssignment?.target_cars || uniqueVehicles,
     expectedDailyEarnings: activeAssignment ? (activeAssignment.target_cars * (activeAssignment.rate_per_car || 17)) : potentialDailyEarnings,
     expectedMonthlyEarnings: activeAssignment ? (activeAssignment.target_cars * (activeAssignment.rate_per_car || 17) * 26) : potentialDailyEarnings * 26,
-
+    syncWarning,
     fetchedAt: Date.now(),
   };
 }
@@ -178,14 +218,7 @@ export function useTodayAssignment() {
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     placeholderData: (prev) => prev ?? cachedRef.current ?? undefined,
-    retry: (failureCount, error) => {
-      setMetrics((m: any) => ({
-        ...m,
-        retryAttempts: m.retryAttempts + 1,
-        lastError: (error as any)?.message ?? String(error),
-      }));
-      return failureCount < 4;
-    },
+    retry: (failureCount) => failureCount < 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
 
