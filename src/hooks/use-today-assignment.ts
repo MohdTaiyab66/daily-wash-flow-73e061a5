@@ -34,10 +34,21 @@ const CACHE_KEY = "uw:today-assignment:last-success-v2";
 function readCache(): TodayAssignmentData | null {
   try {
     const raw = typeof window !== "undefined" ? window.localStorage.getItem(CACHE_KEY) : null;
-    return raw ? (JSON.parse(raw) as TodayAssignmentData) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as TodayAssignmentData;
+    // Discard blank snapshots written by older builds — they made active
+    // partners look like they had no assignment.
+    if (!parsed?.assignment && (parsed?.all?.length ?? 0) === 0) {
+      try { window.localStorage.removeItem(CACHE_KEY); } catch { /* noop */ }
+      return null;
+    }
+    return parsed;
   } catch { return null; }
 }
 function writeCache(d: TodayAssignmentData) {
+  // Never persist an "empty" payload — a transient auth/network hiccup must not
+  // overwrite a partner's real assignment with a blank state.
+  if (!d.assignment && d.all.length === 0) return;
   try { window.localStorage.setItem(CACHE_KEY, JSON.stringify(d)); } catch { /* noop */ }
 }
 
@@ -45,32 +56,17 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   const { data: u, error: uErr } = await supabase.auth.getUser();
   if (uErr) throw uErr;
   if (!u.user) {
-    return {
-      assignment: null, all: [], today: [], nextDate: null,
-      todaysCustomers: 0, completedToday: 0, 
-      unavailableToday: 0, needWashToday: 0,
-      remainingToday: 0,
-      actualEarnedToday: 0, potentialDailyEarnings: 0, potentialMonthlyEarnings: 0,
-      assignmentTotalCustomers: 0, assignmentCompleted: 0,
-      targetCars: 0, expectedDailyEarnings: 0, expectedMonthlyEarnings: 0,
-      fetchedAt: Date.now(),
-    };
+    // Transient: session not hydrated yet. Throw so React Query retries and
+    // keeps the last known good data on screen instead of blanking it.
+    throw new Error("AUTH_NOT_READY");
   }
 
   // Resolve canonical partner identity using the secure resolver
-  const { data: partnerId } = await supabase.rpc("resolve_partner_id", { u_id: u.user.id } as any);
-  
+  const { data: partnerId, error: pErr } = await supabase.rpc("resolve_partner_id", { u_id: u.user.id } as any);
+  if (pErr) throw pErr;
+
   if (!partnerId) {
-    return {
-      assignment: null, all: [], today: [], nextDate: null,
-      todaysCustomers: 0, completedToday: 0, 
-      unavailableToday: 0, needWashToday: 0,
-      remainingToday: 0,
-      actualEarnedToday: 0, potentialDailyEarnings: 0, potentialMonthlyEarnings: 0,
-      assignmentTotalCustomers: 0, assignmentCompleted: 0,
-      targetCars: 0, expectedDailyEarnings: 0, expectedMonthlyEarnings: 0,
-      fetchedAt: Date.now(),
-    };
+    throw new Error("PARTNER_NOT_RESOLVED");
   }
 
   // AUTHORITATIVE PARTNER WORK SOURCE: Fetch all assigned work for today via RPC
@@ -82,7 +78,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
 
   // Get active assignment details for metrics FIRST
   // This ensures we have the assignment record even if get_partner_work returns empty
-  const { data: activeAssignment } = await supabase
+  const { data: activeAssignment, error: aErr } = await supabase
     .from("assignments")
     .select("*")
     .eq("partner_id", partnerId)
@@ -90,6 +86,8 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     .order("start_date", { ascending: false })
     .limit(1)
     .maybeSingle();
+  // Surface the failure instead of silently rendering "no assignment".
+  if (aErr) throw aErr;
 
   // Map RPC results to expected UI shape
   const today = ((work as any[]) ?? []).map((w: any) => ({

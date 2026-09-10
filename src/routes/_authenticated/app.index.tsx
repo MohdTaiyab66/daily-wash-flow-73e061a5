@@ -73,7 +73,9 @@ function HomePage() {
     qc.invalidateQueries({ queryKey: ["history"] });
   }, [qc]);
   
-  const todayData = todayQuery.data;
+  // Always fall back to the last known good payload so the dashboard never
+  // blanks out while a background refresh (or a transient auth hiccup) runs.
+  const todayData = todayQuery.data ?? todayQuery.lastGood ?? undefined;
   const hasData = todayData !== undefined;
 
   // Poll for available work count in the area
@@ -113,7 +115,8 @@ function HomePage() {
 
 
 
-  if (!hasData && todayQuery.isLoading && !todayQuery.isError) {
+  // Only show the skeleton on a true cold start (no data at all, ever).
+  if (!hasData) {
     return <TodayAssignmentSkeleton />;
   }
 
