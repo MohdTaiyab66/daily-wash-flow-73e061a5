@@ -54,6 +54,21 @@ public class UrbanWashCheckoutPlugin extends Plugin {
 
     private static PluginCall PENDING = null;
 
+    /**
+     * Razorpay recommends preloading the checkout at app start. Without it the
+     * SDK has no cached payment-method preferences when the sheet opens, which
+     * is one reason UPI is missing on slower / first-run devices.
+     */
+    @Override
+    public void load() {
+        try {
+            Checkout.preload(getContext().getApplicationContext());
+            Log.d(TAG, "Checkout.preload done");
+        } catch (Throwable t) {
+            Log.w(TAG, "Checkout.preload failed", t);
+        }
+    }
+
     @PluginMethod
     public void open(PluginCall call) {
         call.setKeepAlive(true);
