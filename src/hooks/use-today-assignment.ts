@@ -105,7 +105,10 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
       .order("start_date", { ascending: false })
       .limit(1)
       .maybeSingle();
-  const workRequest = (supabase.rpc as any)("get_partner_work", { p_partner_id: partnerId });
+  const workRequest = (supabase.rpc as any)("get_partner_work", { p_partner_id: partnerId }) as PromiseLike<{
+    data: any[] | null;
+    error: unknown;
+  }>;
   const [assignmentResult, workResult] = await Promise.allSettled([
     withTimeout(assignmentRequest, "ACTIVE_ASSIGNMENT"),
     withTimeout(workRequest, "PARTNER_WORK"),
