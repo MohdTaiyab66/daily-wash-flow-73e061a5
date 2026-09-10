@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTodayAssignment } from "@/hooks/use-today-assignment";
-import { TodayAssignmentSkeleton } from "@/components/partner/TodayAssignmentStatus";
+import { TodayAssignmentSkeleton, TodayAssignmentStatus } from "@/components/partner/TodayAssignmentStatus";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -116,8 +116,24 @@ function HomePage() {
 
 
   // Only show the skeleton on a true cold start (no data at all, ever).
-  if (!hasData) {
+  if (!hasData && todayQuery.isPending) {
     return <TodayAssignmentSkeleton />;
+  }
+
+  if (!hasData) {
+    return (
+      <div className="mx-auto max-w-md px-5 pt-6">
+        <TodayAssignmentStatus
+          isError={todayQuery.isError}
+          isFetching={todayQuery.isFetching}
+          isRefetching={todayQuery.isRefetching}
+          hasData={false}
+          onRetry={() => void todayQuery.refetch()}
+          metrics={todayQuery.metrics}
+          lastSuccessAt={todayQuery.metrics.lastSuccessAt}
+        />
+      </div>
+    );
   }
 
   const assignment = todayData?.assignment ?? null;

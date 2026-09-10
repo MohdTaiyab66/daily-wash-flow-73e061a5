@@ -8,10 +8,12 @@ export function usePartner() {
     queryKey: ["me-partner"],
     queryFn: async () => {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session?.user) return null;
+      if (sessionError) throw sessionError;
+      if (!session?.user) throw new Error("AUTH_NOT_READY");
       
-      const { data: partnerId } = await supabase.rpc("resolve_partner_id", { u_id: session.user.id } as any);
-      if (!partnerId) return null;
+      const { data: partnerId, error: partnerIdError } = await supabase.rpc("resolve_partner_id", { u_id: session.user.id } as any);
+      if (partnerIdError) throw partnerIdError;
+      if (!partnerId) throw new Error("PARTNER_NOT_RESOLVED");
 
       const { data, error } = await supabase
         .from("partners")
@@ -25,7 +27,8 @@ export function usePartner() {
     refetchOnWindowFocus: false,
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
-    refetchOnMount: false,
+    refetchOnMount: true,
+    retry: 2,
   });
 }
 
