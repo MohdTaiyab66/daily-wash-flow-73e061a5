@@ -86,6 +86,7 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
 
     return () => {
       // Clean up listener
+      if (timer) clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("online", onOnline);
       void nativeListener?.remove();
