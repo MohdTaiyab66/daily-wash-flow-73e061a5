@@ -279,14 +279,14 @@ function CustomerHome() {
   const galleryQ = useServiceGallery();
   
   const resolvedServiceImage = (service: Service) => {
-    // 1. Check Banner URL from Catalog (Direct Source)
-    if (service.banner_url) return service.banner_url;
-
-    // 2. Check Gallery
+    // 1. Admin-selected hero/cover photo from the gallery always wins
     const galleryResult = getServiceImage(service.slug, galleryQ.data || []);
     if (galleryResult.source === 'GALLERY') return galleryResult.url;
 
-    // 3. Check hardcoded fallbacks
+    // 2. Catalog banner
+    if (service.banner_url) return service.banner_url;
+
+    // 3. Hardcoded fallbacks
     return galleryResult.url || 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?q=80&w=800&auto=format&fit=crop';
   };
 
