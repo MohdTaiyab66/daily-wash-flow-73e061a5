@@ -227,14 +227,21 @@ function ServiceDetail() {
   const category = vehicle?.category;
   const isSUV = category === "sedan_suv";
   
+  const isDailyShine = service?.service_type === "subscription" && slug?.startsWith("daily_shine");
+
   // Initialize base service in cart when loaded or vehicle category changes
   useEffect(() => {
     if (service && vehicle) {
-      const price = resolveDailyShinePrice(category, service);
-      
+      // Every service uses its own catalog price for the vehicle category.
+      // Daily Shine keeps the canonical subscription resolver.
+      const catalogPrice = Number(isSUV ? service.price_sedan_suv : service.price_hatchback);
+      const price = isDailyShine
+        ? resolveDailyShinePrice(category, service)
+        : (Number.isFinite(catalogPrice) && catalogPrice > 0 ? catalogPrice : Number(service.price_hatchback) || 0);
+
       setBaseService(service.id, service.name, price, vehicle.id);
     }
-  }, [service, category, vehicle?.id, setBaseService, slug]);
+  }, [service, category, isSUV, isDailyShine, vehicle?.id, setBaseService, slug]);
 
   const relevantAddons = useMemo(() => addonsQ.data?.filter(a => !a.applies_to_slugs?.length || a.applies_to_slugs.includes(slug)) || [], [addonsQ.data, slug]);
   
