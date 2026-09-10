@@ -140,7 +140,18 @@ function AssignmentsPage() {
       qc.invalidateQueries({ queryKey: ["available-work-summary"] });
       navigate({ to: "/app/live" });
     },
-    onError: (e: any) => toast.error(e.message)
+    onError: (e: any) => {
+      const msg = String(e?.message ?? "");
+      if (/already have an active assignment/i.test(msg)) {
+        // The partner's assignment exists — just resync and show it.
+        toast.info("Your active assignment is already running. Showing it now.");
+        qc.invalidateQueries({ queryKey: ["today-assignment"] });
+        qc.refetchQueries({ queryKey: ["today-assignment"] });
+        navigate({ to: "/app" });
+        return;
+      }
+      toast.error(msg || "Could not create assignment");
+    }
   });
 
   const cancel = useMutation({
