@@ -681,8 +681,6 @@ function ServiceDetail() {
             </div>
             <div className="space-y-4">
               {relevantAddons.slice(0, 3).map(a => {
-                const price = resolveDailyShinePrice(category, service); // Fixed: Should use resolver, but this is add-ons. Wait, add-ons have their own prices.
-                // For add-ons, we use the isSUV check which is correct for SUV/Hatchback split.
                 const addonPrice = isSUV ? a.price_sedan_suv : a.price_hatchback;
 
                 return (
