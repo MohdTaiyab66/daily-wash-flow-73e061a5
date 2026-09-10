@@ -115,7 +115,8 @@ function HomePage() {
 
 
 
-  if (!hasData && todayQuery.isLoading && !todayQuery.isError) {
+  // Only show the skeleton on a true cold start (no data at all, ever).
+  if (!hasData) {
     return <TodayAssignmentSkeleton />;
   }
 
