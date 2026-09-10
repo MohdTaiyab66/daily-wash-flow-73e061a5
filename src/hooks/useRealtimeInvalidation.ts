@@ -17,18 +17,31 @@ export function useRealtimeInvalidation(tables: string[], queryKeys?: Array<read
     // Set up realtime channel for tables
     
     const channel = supabase.channel(`realtime-inv-${Math.random().toString(36).slice(2, 8)}`);
-    
-    const refresh = (source: string) => {
-      // Invalidation triggered
+
+    // Coalesce bursts of database events into a single refresh so screens
+    // don't thrash (and visibly flicker) several times per second.
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let lastRun = 0;
+    const MIN_GAP_MS = 3000;
+
+    const runRefresh = () => {
+      lastRun = Date.now();
       if (queryKeys?.length) {
         queryKeys.forEach((key) => {
-          // Invalidating key
-          queryClient.invalidateQueries({ queryKey: key as any });
+          queryClient.invalidateQueries({ queryKey: key as any, refetchType: "active" });
         });
       } else {
-        // Invalidating all queries
-        queryClient.invalidateQueries();
+        queryClient.invalidateQueries({ refetchType: "active" });
       }
+    };
+
+    const refresh = (_source: string) => {
+      if (timer) return;
+      const wait = Math.max(300, MIN_GAP_MS - (Date.now() - lastRun));
+      timer = setTimeout(() => {
+        timer = null;
+        runRefresh();
+      }, wait);
     };
 
     tables.forEach((table) => {
