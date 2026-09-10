@@ -38,6 +38,9 @@ function readCache(): TodayAssignmentData | null {
   } catch { return null; }
 }
 function writeCache(d: TodayAssignmentData) {
+  // Never persist an "empty" payload — a transient auth/network hiccup must not
+  // overwrite a partner's real assignment with a blank state.
+  if (!d.assignment && d.all.length === 0) return;
   try { window.localStorage.setItem(CACHE_KEY, JSON.stringify(d)); } catch { /* noop */ }
 }
 
@@ -45,32 +48,17 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   const { data: u, error: uErr } = await supabase.auth.getUser();
   if (uErr) throw uErr;
   if (!u.user) {
-    return {
-      assignment: null, all: [], today: [], nextDate: null,
-      todaysCustomers: 0, completedToday: 0, 
-      unavailableToday: 0, needWashToday: 0,
-      remainingToday: 0,
-      actualEarnedToday: 0, potentialDailyEarnings: 0, potentialMonthlyEarnings: 0,
-      assignmentTotalCustomers: 0, assignmentCompleted: 0,
-      targetCars: 0, expectedDailyEarnings: 0, expectedMonthlyEarnings: 0,
-      fetchedAt: Date.now(),
-    };
+    // Transient: session not hydrated yet. Throw so React Query retries and
+    // keeps the last known good data on screen instead of blanking it.
+    throw new Error("AUTH_NOT_READY");
   }
 
   // Resolve canonical partner identity using the secure resolver
-  const { data: partnerId } = await supabase.rpc("resolve_partner_id", { u_id: u.user.id } as any);
-  
+  const { data: partnerId, error: pErr } = await supabase.rpc("resolve_partner_id", { u_id: u.user.id } as any);
+  if (pErr) throw pErr;
+
   if (!partnerId) {
-    return {
-      assignment: null, all: [], today: [], nextDate: null,
-      todaysCustomers: 0, completedToday: 0, 
-      unavailableToday: 0, needWashToday: 0,
-      remainingToday: 0,
-      actualEarnedToday: 0, potentialDailyEarnings: 0, potentialMonthlyEarnings: 0,
-      assignmentTotalCustomers: 0, assignmentCompleted: 0,
-      targetCars: 0, expectedDailyEarnings: 0, expectedMonthlyEarnings: 0,
-      fetchedAt: Date.now(),
-    };
+    throw new Error("PARTNER_NOT_RESOLVED");
   }
 
   // AUTHORITATIVE PARTNER WORK SOURCE: Fetch all assigned work for today via RPC
