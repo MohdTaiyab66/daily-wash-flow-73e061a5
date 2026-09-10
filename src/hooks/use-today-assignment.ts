@@ -78,7 +78,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
 
   // Get active assignment details for metrics FIRST
   // This ensures we have the assignment record even if get_partner_work returns empty
-  const { data: activeAssignment } = await supabase
+  const { data: activeAssignment, error: aErr } = await supabase
     .from("assignments")
     .select("*")
     .eq("partner_id", partnerId)
@@ -86,6 +86,8 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     .order("start_date", { ascending: false })
     .limit(1)
     .maybeSingle();
+  // Surface the failure instead of silently rendering "no assignment".
+  if (aErr) throw aErr;
 
   // Map RPC results to expected UI shape
   const today = ((work as any[]) ?? []).map((w: any) => ({
