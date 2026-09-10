@@ -34,7 +34,15 @@ const CACHE_KEY = "uw:today-assignment:last-success-v2";
 function readCache(): TodayAssignmentData | null {
   try {
     const raw = typeof window !== "undefined" ? window.localStorage.getItem(CACHE_KEY) : null;
-    return raw ? (JSON.parse(raw) as TodayAssignmentData) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as TodayAssignmentData;
+    // Discard blank snapshots written by older builds — they made active
+    // partners look like they had no assignment.
+    if (!parsed?.assignment && (parsed?.all?.length ?? 0) === 0) {
+      try { window.localStorage.removeItem(CACHE_KEY); } catch { /* noop */ }
+      return null;
+    }
+    return parsed;
   } catch { return null; }
 }
 function writeCache(d: TodayAssignmentData) {
