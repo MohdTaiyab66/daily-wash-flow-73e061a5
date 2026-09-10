@@ -252,7 +252,9 @@ function ServiceDetail() {
 
   const galleryQ = useServiceGallery(slug);
   const galleryImages = useMemo(() => {
-    const items = galleryQ.data || [];
+    const items = [...(galleryQ.data || [])].sort(
+      (a: any, b: any) => (b.is_hero ? 1 : 0) - (a.is_hero ? 1 : 0),
+    );
     return items.length > 0 ? items.map((i: any) => i.image_url) : (getServiceImage(slug).url ? [getServiceImage(slug).url] : []);
   }, [galleryQ.data, slug]);
 
