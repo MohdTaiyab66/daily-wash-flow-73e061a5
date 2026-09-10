@@ -51,9 +51,22 @@ export type RazorpayResult =
   | { status: "cancelled" }
   | { status: "failed"; code?: string; message: string };
 
+/**
+ * Razorpay only offers UPI when the customer contact is a valid Indian mobile
+ * number. Anything else (missing, +91-prefixed, spaced, 0-prefixed) makes the
+ * checkout fall back to cards/net-banking only on some devices.
+ */
+export function normalizeIndianContact(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  const digits = raw.replace(/\D/g, "");
+  const ten = digits.length > 10 ? digits.slice(-10) : digits;
+  if (ten.length !== 10 || !/^[6-9]/.test(ten)) return undefined;
+  return `+91${ten}`;
+}
+
 function toNativeOptions(opts: CheckoutOptions): PaymentBridgeOptions {
   const email = opts.prefillEmail?.trim();
-  const contact = opts.prefillContact?.trim();
+  const contact = normalizeIndianContact(opts.prefillContact);
   const prefill: NonNullable<PaymentBridgeOptions["prefill"]> = {};
   if (email) prefill.email = email;
   if (contact) prefill.contact = contact;
@@ -68,7 +81,20 @@ function toNativeOptions(opts: CheckoutOptions): PaymentBridgeOptions {
     notes: { booking_id: opts.bookingId },
     theme: { color: "#FF6B1A" },
     retry: { enabled: true, max_count: 1 },
-    // method: "upi" // REMOVED for diagnostic build (STEP 4)
+    // Force a UPI block to the top of checkout on every device, then show the
+    // remaining default blocks (cards, net banking, wallets) below it.
+    config: {
+      display: {
+        blocks: {
+          upi: {
+            name: "Pay using UPI",
+            instruments: [{ method: "upi" }],
+          },
+        },
+        sequence: ["block.upi"],
+        preferences: { show_default_blocks: true },
+      },
+    },
   };
 
   if (Object.keys(prefill).length > 0) options.prefill = prefill;
