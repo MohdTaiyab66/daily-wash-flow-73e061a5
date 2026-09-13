@@ -131,7 +131,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
 
   const todayStr = getTodayIST();
   // Map RPC results to expected UI shape
-  const today = work.map((w: any) => ({
+  const allWork = work.map((w: any) => ({
     id: w.service_id,
     assignment_id: w.assignment_id,
     status: w.service_status || w.status,
@@ -164,6 +164,11 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     }
   }));
 
+  // The work feed also carries unfinished historical rows for recovery/audit.
+  // Daily Route must only render today's IST services; otherwise old pending
+  // rows inflate the sequence and can exceed the map provider's waypoint limit.
+  const today = allWork.filter((service: any) => service.scheduled_date === todayStr);
+
   const cCount = today.filter((s: any) => s.status === "completed").length;
   const uCount = today.filter((s: any) => s.status === "unavailable").length;
 
@@ -180,7 +185,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
 
   return {
     assignment: activeAssignment,
-    all: today,
+    all: allWork,
     today: today,
     nextDate: null, // Derived from RPC if needed
     todaysCustomers: uniqueVehicles,
@@ -191,10 +196,10 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
     actualEarnedToday,
     potentialDailyEarnings,
     potentialMonthlyEarnings: potentialDailyEarnings * 26,
-    assignmentTotalCustomers: activeAssignment?.target_cars || uniqueVehicles,
+    assignmentTotalCustomers: uniqueVehicles || activeAssignment?.target_cars || 0,
     assignmentCompleted: cCount,
-    targetCars: activeAssignment?.target_cars || uniqueVehicles,
-    expectedDailyEarnings: activeAssignment ? (activeAssignment.target_cars * (activeAssignment.rate_per_car || 17)) : potentialDailyEarnings,
+    targetCars: uniqueVehicles || activeAssignment?.target_cars || 0,
+    expectedDailyEarnings: potentialDailyEarnings || (activeAssignment ? (activeAssignment.target_cars * (activeAssignment.rate_per_car || 17)) : 0),
     expectedMonthlyEarnings: activeAssignment ? (activeAssignment.target_cars * (activeAssignment.rate_per_car || 17) * 26) : potentialDailyEarnings * 26,
     syncWarning,
     fetchedAt: Date.now(),
