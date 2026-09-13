@@ -7219,6 +7219,37 @@ export type Database = {
           vehicle_number: string
         }[]
       }
+      get_partner_work_v2: {
+        Args: { p_partner_id: string }
+        Returns: {
+          address: string
+          assignment_id: string
+          booking_id: string
+          completed_at: string
+          customer_id: string
+          customer_name: string
+          customer_phone: string
+          destination_lat: number
+          destination_lng: number
+          distance_km: number
+          eta_at: string
+          latitude: number
+          longitude: number
+          manual_sequence_no: number
+          rate_per_car: number
+          scheduled_date: string
+          scheduled_time: string
+          sequence_no: number
+          service_id: string
+          service_status: Database["public"]["Enums"]["service_status"]
+          started_at: string
+          unavailable_reason: string
+          vehicle_id: string
+          vehicle_make: string
+          vehicle_model: string
+          vehicle_number: string
+        }[]
+      }
       get_pending_offer_for_partner: {
         Args: { p_partner_id: string }
         Returns: Json
