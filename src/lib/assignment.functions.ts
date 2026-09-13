@@ -8,11 +8,13 @@ export const getMyAssignment = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context as any;
     const today = getTodayIST();
+    const { data: partnerId, error: partnerError } = await supabase.rpc("resolve_partner_id", { u_id: userId });
+    if (partnerError || !partnerId) throw new Error("Partner identity not found");
 
     const { data: a } = await supabase
       .from("assignments")
       .select("*")
-      .eq("partner_id", userId)
+      .eq("partner_id", partnerId)
       .eq("status", "active")
       .gte("end_date", today)
       .order("start_date", { ascending: false })
@@ -112,8 +114,10 @@ export const getRouteVisibility = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const supabase = (context as any).supabase;
     const userId = (context as any).userId;
+    const { data: partnerId, error: partnerError } = await supabase.rpc("resolve_partner_id", { u_id: userId });
+    if (partnerError || !partnerId) throw new Error("Partner identity not found");
     const { data, error } = await (supabase as any)
-      .rpc("get_route_visibility", { p_partner: userId });
+      .rpc("get_route_visibility", { p_partner: partnerId });
     if (error) throw new Error(error.message);
     const row = Array.isArray(data) ? data[0] : data;
     if (!row || !row.assignment_id) return { visible: true, unlock_at: null, shift_start: null, assignment_id: null, override: row?.override ?? "auto" };
@@ -221,11 +225,13 @@ export const getEndOfDaySummary = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context as any;
     const today = getTodayIST();
+    const { data: partnerId, error: partnerError } = await supabase.rpc("resolve_partner_id", { u_id: userId });
+    if (partnerError || !partnerId) throw new Error("Partner identity not found");
 
     const { data: services } = await supabase
       .from("services")
       .select("id,status,started_at,completed_at,rate_per_car,start_lat,start_lng,complete_lat,complete_lng")
-      .eq("partner_id", userId)
+      .eq("partner_id", partnerId)
       .eq("scheduled_date", today);
     const rows = services ?? [];
     const completed = rows.filter((s: any) => s.status === "completed");
@@ -275,22 +281,24 @@ export function haversineKm(a: { lat: number; lng: number }, b: { lat: number; l
 export const reclaimReleasedRouteToday = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const userId = (context as any).userId;
+    const { supabase, userId } = context as any;
     const today = getTodayIST();
+    const { data: partnerId, error: partnerError } = await supabase.rpc("resolve_partner_id", { u_id: userId });
+    if (partnerError || !partnerId) throw new Error("Partner identity not found");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: released } = await supabaseAdmin
       .from("services")
       .select("id,recovery_event_id")
       .is("partner_id", null)
-      .eq("original_partner_id", userId)
+      .eq("original_partner_id", partnerId)
       .eq("scheduled_date", today)
       .eq("status", "pending");
     const rows = released ?? [];
     if (rows.length === 0) return { reclaimed: 0 };
     const ids = rows.map((r: any) => r.id);
     const { error } = await (supabaseAdmin.from("services") as any)
-      .update({ partner_id: userId, updated_at: new Date().toISOString() })
+      .update({ partner_id: partnerId, updated_at: new Date().toISOString() })
       .in("id", ids);
     if (error) throw new Error(error.message);
     // Resolve any pending DAR events tied to these services.
@@ -326,7 +334,11 @@ export type AssignmentIntegrityReport = {
 export const startService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { service_id: string; lat?: number; lng?: number }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    const { data: partnerId, error: partnerError } = await supabase.rpc("resolve_partner_id", { u_id: userId });
+    if (partnerError || !partnerId) throw new Error("Partner identity not found");
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 4. Atomic service-start navigation fix (E2E)
@@ -339,6 +351,8 @@ export const startService = createServerFn({ method: "POST" })
         start_lng: data.lng ?? null,
       })
       .eq("id", data.service_id)
+      .eq("partner_id", partnerId)
+      .in("status", ["pending", "in_progress"])
       .select("id, status")
       .single();
 
@@ -372,10 +386,12 @@ export const validateTodayAssignment = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<AssignmentIntegrityReport> => {
     const { supabase, userId } = context as any;
     const today = getTodayIST();
+    const { data: partnerId, error: partnerError } = await supabase.rpc("resolve_partner_id", { u_id: userId });
+    if (partnerError || !partnerId) throw new Error("Partner identity not found");
     const { data: a } = await supabase
       .from("assignments")
       .select("id,partner_id,status,end_date")
-      .eq("partner_id", userId)
+      .eq("partner_id", partnerId)
       .eq("status", "active")
       .gte("end_date", today)
       .order("start_date", { ascending: false })
@@ -406,7 +422,7 @@ export const validateTodayAssignment = createServerFn({ method: "GET" })
     report.todays_customers = new Set(todays.map((s: any) => s.customer_id).filter(Boolean)).size;
     report.services_missing_customer = rows.filter((s: any) => !s.customer_id).length;
     report.services_wrong_partner = rows.filter(
-      (s: any) => s.partner_id && s.partner_id !== userId,
+      (s: any) => s.partner_id && s.partner_id !== partnerId,
     ).length;
 
     if (report.total_services === 0) {
@@ -428,7 +444,7 @@ export const validateTodayAssignment = createServerFn({ method: "GET" })
       try {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         await supabaseAdmin.from("assignment_integrity_audit").insert({
-          partner_id: userId,
+          partner_id: partnerId,
           assignment_id: report.assignment_id,
           mismatches: report.mismatches,
           todays_services: report.todays_services,

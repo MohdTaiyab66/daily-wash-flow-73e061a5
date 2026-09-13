@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getTodayIST } from "@/lib/date-utils";
 import { useServerFn } from "@tanstack/react-start";
 import { submitServiceOutcome, UNAVAILABLE_REASONS } from "@/lib/service-workflow.functions";
+import { startService } from "@/lib/assignment.functions";
 
 
 const AFTER_ANGLES = ["front", "rear", "left", "right"] as const;
@@ -56,10 +57,13 @@ function ServiceDetail() {
     queryFn: async () => {
       const today = getTodayIST();
       const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return { total: 0, completed: 0 };
+      const { data: partnerId } = await supabase.rpc("resolve_partner_id", { u_id: u.user.id } as any);
+      if (!partnerId) return { total: 0, completed: 0 };
       const { data } = await supabase
         .from("services")
         .select("id,status,customers(full_name)")
-        .eq("partner_id", u.user!.id)
+        .eq("partner_id", partnerId)
         .eq("scheduled_date", today);
       const rows = data ?? [];
       const total = rows.length;
@@ -69,16 +73,11 @@ function ServiceDetail() {
   });
 
 
+  const startServiceFn = useServerFn(startService);
   const start = useMutation({
     mutationFn: async () => {
       const pos = await getPosition();
-      const { error } = await supabase.from("services").update({
-        status: "in_progress",
-        started_at: new Date().toISOString(),
-        start_lat: pos?.lat ?? null,
-        start_lng: pos?.lng ?? null,
-      }).eq("id", id);
-      if (error) throw error;
+      await startServiceFn({ data: { service_id: id, lat: pos?.lat, lng: pos?.lng } });
       
       import("@/lib/push/immediate.functions").then(m => {
         m.flushNotificationPush().catch(e => console.error("[immediate-push] start flush failed", e));

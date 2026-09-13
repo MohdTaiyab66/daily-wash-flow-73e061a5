@@ -68,6 +68,8 @@ export const submitServiceOutcome = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as any;
     const { serviceId, outcome, reason, notes, photos, lat, lng } = data;
+    const { data: partnerId, error: partnerError } = await supabase.rpc("resolve_partner_id", { u_id: userId });
+    if (partnerError || !partnerId) throw new Error("Partner identity not found");
 
     // 1. Validate Service Ownership & Status
     const { data: service, error: sErr } = await supabase
@@ -77,7 +79,7 @@ export const submitServiceOutcome = createServerFn({ method: "POST" })
       .single();
 
     if (sErr || !service) throw new Error("Service not found");
-    if (service.partner_id !== userId) throw new Error("Unauthorized");
+    if (service.partner_id !== partnerId) throw new Error("Unauthorized");
     if (service.status === "completed") throw new Error("Already completed");
 
     // 2. Map Outcome to RPC/DB
@@ -91,7 +93,8 @@ export const submitServiceOutcome = createServerFn({ method: "POST" })
         p_service_id: serviceId,
         p_lat: lat || 0,
         p_lng: lng || 0,
-        p_notes: notes || null
+        p_notes: notes || null,
+        p_force_override: false,
       });
     } else {
       // Unavailable or Need Wash

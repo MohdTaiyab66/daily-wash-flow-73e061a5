@@ -73,8 +73,6 @@ function RoutePage() {
 
   const routeUnlocked = !visibilityInfo || visibilityInfo.visible !== false;
   
-  const isMonday = new Date().getDay() === 1;
-  
   const visibleServices = (() => {
     // If today has services, use them
     const todays = (services ?? []).filter((s) => s.status !== "covered_by_booking");
@@ -225,7 +223,7 @@ function RoutePage() {
         <Card className="p-4 shadow-sm border-none bg-neutral-50 w-full box-border">
           <div className="flex items-baseline justify-between mb-3">
             <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Today's Progress</h3>
-            <span className="text-xs font-bold">{isMonday ? "MONDAY — SERVICE OFF" : `${done} / ${total} COMPLETED TODAY`}</span>
+            <span className="text-xs font-bold">{`${done} / ${total} COMPLETED TODAY`}</span>
           </div>
           <Progress value={progressPct} className="h-1.5 mb-5" />
           <div className="grid grid-cols-3 gap-2 text-center w-full">
@@ -277,16 +275,23 @@ function RoutePage() {
         <div className="flex justify-between items-baseline mb-3">
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Next Stop</h2>
         </div>
-        {activeNext && !isEndOfDay && routeUnlocked && (
-          <NextCustomerHero stop={activeNext} seqNo={1} total={total} onClick={() => setSelectedStopId(activeNext.id)} isMonday={isMonday} />
+         {activeNext && !isEndOfDay && routeUnlocked && (
+           <NextCustomerHero stop={activeNext} seqNo={1} total={total} onClick={() => setSelectedStopId(activeNext.id)} isMonday={false} />
         )}
-        {!activeNext && !isEndOfDay && routeUnlocked && (todayQuery.data?.assignmentTotalCustomers ?? todayQuery.data?.targetCars ?? 0) > 0 && (
+         {!activeNext && !isEndOfDay && routeUnlocked && todayQuery.isFetching && (todayQuery.data?.assignmentTotalCustomers ?? todayQuery.data?.targetCars ?? 0) > 0 && (
           <div className="p-8 text-center bg-neutral-50 rounded-3xl border border-dashed border-neutral-200">
             <Clock className="h-8 w-8 text-neutral-300 mx-auto mb-3" />
             <p className="text-sm font-bold text-neutral-500 uppercase tracking-tight">Assignment Active</p>
             <p className="text-[10px] text-neutral-400 font-medium mt-1 uppercase">Loading sequence...</p>
           </div>
         )}
+         {!activeNext && !isEndOfDay && routeUnlocked && !todayQuery.isFetching && (todayQuery.data?.assignmentTotalCustomers ?? todayQuery.data?.targetCars ?? 0) > 0 && (
+           <div className="p-6 text-center bg-amber-50 rounded-3xl border border-amber-200">
+             <AlertTriangle className="h-7 w-7 text-amber-600 mx-auto mb-2" />
+             <p className="text-sm font-bold text-amber-900">Route needs attention</p>
+             <p className="text-xs text-amber-700 mt-1">Your assignment is active, but no service stops are attached. Please contact operations.</p>
+           </div>
+         )}
       </div>
 
       {/* Up Next List */}
@@ -306,7 +311,7 @@ function RoutePage() {
 
       {/* Completed Section */}
       {/* Today's Service Summary */}
-      {!isMonday && total > 0 && (
+      {total > 0 && (
         <div className="px-5 mt-6 w-full box-border">
           <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">Service Summary</h2>
           <div className="grid grid-cols-3 gap-2 w-full">
@@ -402,7 +407,7 @@ function RoutePage() {
         onOpenChange={(open) => !open && setSelectedStopId(null)}
         onStart={() => selectedStopId && startServiceMutation.mutate(selectedStopId)}
         isStarting={startServiceMutation.isPending}
-        isMonday={isMonday}
+        isMonday={false}
       />
 
     </div>

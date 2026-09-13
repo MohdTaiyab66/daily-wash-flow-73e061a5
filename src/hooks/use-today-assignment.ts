@@ -105,7 +105,7 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
       .order("start_date", { ascending: false })
       .limit(1)
       .maybeSingle();
-  const workRequest = (supabase.rpc as any)("get_partner_work", { p_partner_id: partnerId }) as PromiseLike<{
+  const workRequest = (supabase.rpc as any)("get_partner_work_v2", { p_partner_id: partnerId }) as PromiseLike<{
     data: any[] | null;
     error: unknown;
   }>;
@@ -130,32 +130,44 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
   }
 
   const todayStr = getTodayIST();
-  const isMonday = new Date(`${todayStr}T12:00:00+05:30`).getDay() === 1;
-
   // Map RPC results to expected UI shape
-  const today = work.map((w: any) => ({
+  const allWork = work.map((w: any) => ({
     id: w.service_id,
     assignment_id: w.assignment_id,
-    status: w.status || w.service_status,
+    status: w.service_status || w.status,
     scheduled_date: w.scheduled_date,
     scheduled_time: w.time_slot || w.scheduled_time,
     booking_id: w.booking_id,
     customer_id: w.customer_id,
     vehicle_id: w.vehicle_id,
-    rate_per_car: w.rate_per_car || w.earning_value,
+    rate_per_car: Number(w.rate_per_car ?? w.earning_value ?? 0),
+    unavailable_reason: w.unavailable_reason,
+    sequence_no: w.sequence_no,
+    manual_sequence_no: w.manual_sequence_no,
+    eta_at: w.eta_at,
+    distance_km: w.distance_km,
+    started_at: w.started_at,
+    completed_at: w.completed_at,
+    destination_lat: w.destination_lat ?? w.latitude ?? null,
+    destination_lng: w.destination_lng ?? w.longitude ?? null,
     customers: {
       full_name: w.customer_name,
-      phone: w.contact_number || w.customer_phone,
-      latitude: w.latitude || w.location_lat,
-      longitude: w.longitude || w.location_lng,
+      phone: w.customer_phone || w.contact_number,
+      latitude: w.latitude ?? w.location_lat ?? null,
+      longitude: w.longitude ?? w.location_lng ?? null,
       address_line: w.address
     },
     vehicles: {
-      make: w.vehicle_model?.split(' ')[0] || w.vehicle_name?.split(' ')[0] || '',
-      model: w.vehicle_model?.split(' ').slice(1).join(' ') || w.vehicle_name?.split(' ').slice(1).join(' ') || '',
+      make: w.vehicle_make || w.vehicle_model?.split(' ')[0] || w.vehicle_name?.split(' ')[0] || '',
+      model: w.vehicle_model || w.vehicle_name?.split(' ').slice(1).join(' ') || '',
       registration_number: w.vehicle_number
     }
   }));
+
+  // The work feed also carries unfinished historical rows for recovery/audit.
+  // Daily Route must only render today's IST services; otherwise old pending
+  // rows inflate the sequence and can exceed the map provider's waypoint limit.
+  const today = allWork.filter((service: any) => service.scheduled_date === todayStr);
 
   const cCount = today.filter((s: any) => s.status === "completed").length;
   const uCount = today.filter((s: any) => s.status === "unavailable").length;
@@ -173,21 +185,21 @@ async function fetchTodayAssignment(): Promise<TodayAssignmentData> {
 
   return {
     assignment: activeAssignment,
-    all: today,
+    all: allWork,
     today: today,
     nextDate: null, // Derived from RPC if needed
-    todaysCustomers: isMonday ? 0 : uniqueVehicles,
-    completedToday: isMonday ? 0 : cCount,
-    unavailableToday: isMonday ? 0 : uCount,
-    needWashToday: 0, // Consolidated into unavailable or specific status
-    remainingToday: isMonday ? 0 : today.filter((s: any) => s.status === "pending" || s.status === "in_progress").length,
-    actualEarnedToday: isMonday ? 0 : actualEarnedToday,
+    todaysCustomers: uniqueVehicles,
+    completedToday: cCount,
+    unavailableToday: today.filter((s: any) => s.status === "unavailable" && s.unavailable_reason !== "dirty_vehicle").length,
+    needWashToday: today.filter((s: any) => s.status === "unavailable" && s.unavailable_reason === "dirty_vehicle").length,
+    remainingToday: today.filter((s: any) => s.status === "pending" || s.status === "in_progress").length,
+    actualEarnedToday,
     potentialDailyEarnings,
     potentialMonthlyEarnings: potentialDailyEarnings * 26,
-    assignmentTotalCustomers: activeAssignment?.target_cars || uniqueVehicles,
+    assignmentTotalCustomers: uniqueVehicles || activeAssignment?.target_cars || 0,
     assignmentCompleted: cCount,
-    targetCars: activeAssignment?.target_cars || uniqueVehicles,
-    expectedDailyEarnings: activeAssignment ? (activeAssignment.target_cars * (activeAssignment.rate_per_car || 17)) : potentialDailyEarnings,
+    targetCars: uniqueVehicles || activeAssignment?.target_cars || 0,
+    expectedDailyEarnings: potentialDailyEarnings || (activeAssignment ? (activeAssignment.target_cars * (activeAssignment.rate_per_car || 17)) : 0),
     expectedMonthlyEarnings: activeAssignment ? (activeAssignment.target_cars * (activeAssignment.rate_per_car || 17) * 26) : potentialDailyEarnings * 26,
     syncWarning,
     fetchedAt: Date.now(),
