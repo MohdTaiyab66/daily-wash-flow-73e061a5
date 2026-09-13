@@ -407,7 +407,7 @@ function RoutePage() {
         onOpenChange={(open) => !open && setSelectedStopId(null)}
         onStart={() => selectedStopId && startServiceMutation.mutate(selectedStopId)}
         isStarting={startServiceMutation.isPending}
-        isMonday={isMonday}
+        isMonday={false}
       />
 
     </div>

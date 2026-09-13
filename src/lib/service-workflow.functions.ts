@@ -94,7 +94,7 @@ export const submitServiceOutcome = createServerFn({ method: "POST" })
         p_lat: lat || 0,
         p_lng: lng || 0,
         p_notes: notes || null,
-        p_force_override: true,
+        p_force_override: false,
       });
     } else {
       // Unavailable or Need Wash

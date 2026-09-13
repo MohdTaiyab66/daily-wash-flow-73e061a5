@@ -225,11 +225,13 @@ export const getEndOfDaySummary = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context as any;
     const today = getTodayIST();
+    const { data: partnerId, error: partnerError } = await supabase.rpc("resolve_partner_id", { u_id: userId });
+    if (partnerError || !partnerId) throw new Error("Partner identity not found");
 
     const { data: services } = await supabase
       .from("services")
       .select("id,status,started_at,completed_at,rate_per_car,start_lat,start_lng,complete_lat,complete_lng")
-      .eq("partner_id", userId)
+      .eq("partner_id", partnerId)
       .eq("scheduled_date", today);
     const rows = services ?? [];
     const completed = rows.filter((s: any) => s.status === "completed");
@@ -279,22 +281,24 @@ export function haversineKm(a: { lat: number; lng: number }, b: { lat: number; l
 export const reclaimReleasedRouteToday = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const userId = (context as any).userId;
+    const { supabase, userId } = context as any;
     const today = getTodayIST();
+    const { data: partnerId, error: partnerError } = await supabase.rpc("resolve_partner_id", { u_id: userId });
+    if (partnerError || !partnerId) throw new Error("Partner identity not found");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: released } = await supabaseAdmin
       .from("services")
       .select("id,recovery_event_id")
       .is("partner_id", null)
-      .eq("original_partner_id", userId)
+      .eq("original_partner_id", partnerId)
       .eq("scheduled_date", today)
       .eq("status", "pending");
     const rows = released ?? [];
     if (rows.length === 0) return { reclaimed: 0 };
     const ids = rows.map((r: any) => r.id);
     const { error } = await (supabaseAdmin.from("services") as any)
-      .update({ partner_id: userId, updated_at: new Date().toISOString() })
+      .update({ partner_id: partnerId, updated_at: new Date().toISOString() })
       .in("id", ids);
     if (error) throw new Error(error.message);
     // Resolve any pending DAR events tied to these services.
